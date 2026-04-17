@@ -1,0 +1,111 @@
+# PROTOCOLO DE AUTOGESTION INTELIGENTE, GUARDIA DE DOCUMENTACION Y SINCRONIZACION
+
+REGLA INMEDIATA: Al iniciar, ejecuta `ls -R` para detectar el contexto.
+Si falta documentacion en `/docs/`, activa el protocolo de regularizacion o inicio automaticamente.
+
+---
+
+## 📌 FUENTE DE VERDAD (SSOT)
+- Los archivos .md de `/docs/` son la fuente de verdad del proyecto.
+- La memoria auto-generada de Windsurf es solo un acelerador de contexto, NO es fuente de verdad.
+- Si algo en la memoria auto-generada contradice un doc de `/docs/`, ganan los docs.
+- Si detectas esta contradiccion, avisa al usuario antes de actuar.
+
+---
+
+## 🛑 INTERRUPCION DE SEGURIDAD (OBLIGATORIO)
+Antes de modificar, anadir o reparar codigo, DEBES preguntar:
+"He recibido tu peticion. Segun el protocolo de calidad:
+1. ¿Actualizo `docs/user-stories.md` y `docs/roadmap.md` primero?
+2. ¿Hay nuevas reglas para `docs/blueprints.md`?
+3. ¿Los tests asociados estan planificados en `docs/testing-strategy.md`?
+4. ¿Esta peticion implica una decision no trivial que debo registrar en `docs/decisions-log.md`?
+
+No tocare el codigo hasta que confirmes la sincronizacion documental."
+
+---
+
+## 🔒 CIERRE DE TAREA OBLIGATORIO (ANTIDRIFT)
+Al terminar CUALQUIER tarea de codigo, ejecuta SIEMPRE el protocolo `On(task_complete)`
+definido en `@prompts/architect-brain.md`. El checklist de sincronizacion documental
+debe aparecer VISIBLE al final de cada tarea, con cada doc marcado como actualizado
+o como "sin cambios" con justificacion.
+
+Una tarea NO esta cerrada si el checklist no se ha mostrado.
+
+Si detectas que olvidaste actualizar un doc, NO cierres la tarea: pide permiso
+para anadir la actualizacion faltante antes de cerrar.
+
+---
+
+## CASO A: PROYECTO NUEVO
+Si no hay codigo:
+1. Carga `@prompts/architect-brain.md`.
+2. Lanza la **Entrevista BMADT** (Beneficio, Mecanismo, Alcance, Datos, Testing).
+3. Genera el pack en `docs/`: prd.md, architecture.md, roadmap.md, user-stories.md, testing-strategy.md, decisions-log.md.
+4. Ejecuta el protocolo `On(testing_setup)` ANTES del primer ticket funcional:
+   instala framework de tests + soporte de linter del framework, crea configuracion minima, verifica que un smoke test pasa.
+5. Registra las decisiones iniciales (respuestas BMADT) en `decisions-log.md`.
+
+---
+
+## CASO B: PROYECTO EXISTENTE
+Si hay codigo pero no hay `/docs/` completos:
+1. Ofrece el menu:
+   - **[1] Regularizar** (Escanear y crear blueprints).
+   - **[2] Evolucionar** (Anadir funcionalidad).
+   - **[3] Reparar** (Corregir errores puntuales).
+   - **[4] Regularizar + Cubrir con tests** (Blueprints + setup de tests + cobertura de logica critica).
+2. Tu prioridad por defecto es crear `docs/blueprints.md` analizando los patrones del codigo actual.
+3. Si se elige [4]:
+   - Detecta el stack leyendo `composer.json`, `package.json`, archivos fuente.
+   - Identifica "logica critica" (validadores, servicios, reglas de negocio) ignorando fontaneria.
+   - Carga `@prompts/skills/tests-skill.md` como guia.
+   - Instala dependencias (framework + soporte de linter), crea configuracion y genera tests priorizando la logica critica.
+   - Documenta en `docs/testing-strategy.md` qué se ha cubierto y qué queda pendiente.
+   - Registra decisiones (framework elegido, alcance de cobertura) en `decisions-log.md`.
+   - Anade tickets al `roadmap.md` por cada zona NO cubierta inicialmente.
+
+---
+
+## COMANDOS DEL USUARIO (disparadores de protocolos)
+
+Reconoce y ejecuta estos comandos cuando aparezcan en la conversacion:
+
+| Comando del usuario | Protocolo que se ejecuta |
+|---|---|
+| "que hacemos hoy" / "ponme al dia" / "retomo el proyecto" | `On(resume_project)` |
+| "quiero revisar la decision X" / "cambia [stack/alcance/testing]" | `On(revisit_decision)` |
+| "revisa sincronizacion" / "verifica drift" / "esta todo alineado?" | `On(sync_check)` |
+| "empezar proyecto [nombre]" / "sigue el protocolo de inicio" | `On(project_start)` |
+
+---
+
+## TESTING (obligatorio en todo proyecto)
+- Todo proyecto nuevo arranca con entorno de tests configurado ANTES del primer codigo funcional.
+- Un ticket NO se marca `[x]` en `roadmap.md` hasta que sus tests esten en verde.
+- Los tests viven en la carpeta convencional del stack (`tests/`, `backend/tests/`, `src/__tests__/`, etc.) — documentada en `docs/testing-strategy.md`.
+- Logica critica (validadores, servicios, reglas de negocio, calculos) tiene tests obligatorios.
+- UI trivial, getters/setters, renders simples y fontaneria quedan fuera del scope de tests.
+- Las dependencias externas (BD, APIs, sistema de archivos) se mockean en tests unitarios.
+- Si una skill especifica de tests existe en `@prompts/skills/tests-skill.md`, consultala antes de generar tests.
+- Los frameworks de test que usan metodos magicos en mocks (PHPUnit `__call`, Jest `jest.fn`, etc.) requieren extensiones de linter para evitar falsos positivos; instalarlas en `On(testing_setup)`.
+
+---
+
+## DECISIONES (trazabilidad)
+- Toda decision no trivial se registra en `docs/decisions-log.md` como una ADR nueva.
+- Las ADRs son INMUTABLES: nunca se edita el contenido historico, solo se marca como `Superseded por ADR-XXX` cuando cambia.
+- Son decisiones no triviales: cambio de stack, eleccion de libreria principal, decisiones de arquitectura (monolito vs microservicios, REST vs GraphQL), cambios de scope de testing.
+- NO son decisiones: bugfixes, renombres, refactors locales, ajustes de estilo.
+
+---
+
+## REGLAS DE ORO:
+- **Centralizacion:** Solo se documenta en la raiz de `/docs/`.
+- **Fuente de verdad:** Docs > memoria auto-generada.
+- **Sincronizacion:** Ticket terminado = `[x]` en roadmap, `%` actualizado, tests en verde, Y checklist `On(task_complete)` visible.
+- **No proliferacion:** No crear archivos nuevos para cambios individuales; editar los maestros.
+- **Tests como contrato:** Un test en verde es un contrato verificable; un test en `.skip` mas de una semana es un bug del roadmap.
+- **Decisiones trazables:** Si no esta en `decisions-log.md`, no existe como decision oficial.
+- **Antidrift:** Ninguna tarea se cierra sin mostrar el checklist de sincronizacion documental.

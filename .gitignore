@@ -1,0 +1,19 @@
+# Windsurf local state (no conviene compartirlo)
+.windsurf/memories/
+.windsurf/cascade/
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos temporales
+*.tmp
+*.log
