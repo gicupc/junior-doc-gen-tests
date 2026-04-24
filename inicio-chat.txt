@@ -36,11 +36,15 @@ Los archivos .md de .windsurf/workflows/ son los comandos invocables. Escribe
 | /sync            | Detectar drift entre codigo y documentacion. Solo reporta. |
 | /cerrar          | Forzar checklist de sincronizacion si sospechas que se     |
 |                  | salto al cerrar una tarea anterior.                        |
+| /cuestionar      | Auditar la CALIDAD real de la suite de tests con mutation  |
+|                  | thinking. No instala nada; plantea mutaciones y detecta    |
+|                  | falsa confianza.                                           |
 +------------------+------------------------------------------------------------+
 
 Puedes pasar contexto despues del comando. Ejemplo:
   /nueva quiero anadir exportacion a PDF en el modulo de prompts
   /inicio aplicacion web para gestionar recetas, PHP 8 + MySQL + Bootstrap 5
+  /cuestionar audita los tests del modulo de validacion
 
 --------------------------------------------------------------------------------
  CICLO DE VIDA TIPICO
@@ -50,6 +54,7 @@ Dias 1-N (desarrollo)   -> /nueva y /reparar para cada tarea
 Vuelves tras pausa      -> /hoy
 Cambias de opinion      -> /decidir
 Sospechas drift         -> /sync
+Dudas de la calidad     -> /cuestionar
 Quieres forzar cierre   -> /cerrar
 
 Para proyectos que ya existen sin documentacion:
@@ -79,9 +84,10 @@ Resto del ciclo         -> igual que arriba
     [3] Reparar              - usa mejor /reparar directamente.
     [4] Regularizar + tests  - todo lo anterior mas setup de tests y
                                cobertura de logica critica identificada.
-  En [4] carga la skill de tests, instala framework, genera tests para la
-  logica critica detectada (validadores, servicios, reglas de negocio) y
-  anade tickets al roadmap por lo que queda pendiente.
+  En [4] carga tests-skill. Si detecta codigo sospechoso o divergencia
+  con contrato formal (OpenAPI, JSON Schema), carga TAMBIEN la skill de
+  legacy-testing para generar characterization tests separados de los
+  tests SPEC.
 
 /hoy
   Ejecuta On(resume_project). Lee los docs clave, corre la suite de tests,
@@ -120,6 +126,19 @@ Resto del ciclo         -> igual que arriba
   "sin cambios" con justificacion. Normalmente se dispara solo al cerrar
   cualquier tarea; este comando esta por si sospechas que se salto.
 
+/cuestionar
+  Audita la CALIDAD real de la suite de tests sin instalar herramientas.
+  Filosofia: cobertura no es calidad. Un test util es el que detecta
+  errores relevantes.
+    1. Elige alcance (archivo, modulo, o backend entero si es pequeno).
+    2. La IA propone 5+ mutaciones realistas sobre el codigo.
+    3. Evalua si la suite actual detectaria cada una.
+    4. Lista mutaciones "supervivientes" y propone los tests faltantes.
+    5. Ofrece ir mas alla: instalar mutation testing real (Infection,
+       StrykerJS, PIT, mutmut segun stack) como decision opt-in con ADR.
+  Menciona property-based testing si detecta invariantes claras en el
+  modulo, sin implementarlo automaticamente.
+
 --------------------------------------------------------------------------------
  REGLAS DE ORO
 --------------------------------------------------------------------------------
@@ -149,6 +168,14 @@ Resto del ciclo         -> igual que arriba
 6. ANTIDRIFT
    Ninguna tarea se cierra sin mostrar el checklist de sincronizacion.
 
+7. LEGACY PRIMERO CONGELAR, LUEGO CAMBIAR
+   En codigo legacy, nunca modificar sin haber capturado antes el
+   comportamiento actual con characterization tests.
+
+8. COBERTURA NO ES CALIDAD
+   Un test que pasa no garantiza que detecte bugs. La calidad real se
+   audita con mutation thinking (/cuestionar).
+
 --------------------------------------------------------------------------------
  ESTRUCTURA DE ARCHIVOS
 --------------------------------------------------------------------------------
@@ -163,7 +190,8 @@ Resto del ciclo         -> igual que arriba
 │       ├── reparar.md
 │       ├── decidir.md
 │       ├── sync.md
-│       └── cerrar.md
+│       ├── cerrar.md
+│       └── cuestionar.md     # Mutation thinking + auditoria de calidad
 ├── docs/                     # SSOT - Single Source of Truth
 │   ├── prd.md                # Que es el producto y para quien
 │   ├── architecture.md       # Como esta montado tecnicamente
@@ -175,7 +203,10 @@ Resto del ciclo         -> igual que arriba
 ├── prompts/
 │   ├── architect-brain.md    # Cerebro del sistema: protocolos On(...)
 │   └── skills/
-│       └── tests-skill.md    # Guia de generacion de tests por stack
+│       ├── tests-skill.md         # Guia de generacion de tests por stack
+│       └── legacy-testing-skill.md # Characterization tests para legacy
+├── LICENSE                   # MIT
+├── README.md                 # Descripcion del sistema para GitHub
 └── inicio-chat.txt           # Este archivo
 
 --------------------------------------------------------------------------------

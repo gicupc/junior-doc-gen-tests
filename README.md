@@ -6,14 +6,15 @@ Sistema de scaffolding para [Windsurf](https://windsurf.com) que convierte a Cas
 
 ## Qué resuelve
 
-Cuando trabajas con una IA generando código día tras día, aparecen cuatro problemas silenciosos:
+Cuando trabajas con una IA generando código día tras día, aparecen cinco problemas silenciosos:
 
 1. **Los docs se quedan atrás del código** — nadie los actualiza porque no duele inmediatamente.
 2. **Las decisiones técnicas se olvidan** — ¿por qué elegimos esta librería? Nadie se acuerda tres meses después.
 3. **Los tests son un "luego" eterno** — se añaden al final, si sobra tiempo, con calidad baja.
-4. **Retomar un proyecto tras una pausa cuesta horas** — hay que volver a cargarse el contexto completo.
+4. **El código legacy se toca sin red de seguridad** — cambiar primero y rezar después es receta para bugs nuevos.
+5. **Cobertura ≠ calidad** — tests que pasan no garantizan detectar bugs reales.
 
-Este sistema impone protocolos que obligan a la IA a resolver los cuatro problemas por diseño.
+Este sistema impone protocolos que obligan a la IA a resolver los cinco problemas por diseño.
 
 ---
 
@@ -38,10 +39,11 @@ Este sistema impone protocolos que obligan a la IA a resolver los cuatro problem
 | `/decidir`      | Cambiar una decisión pasada. Propaga cambios sin perder histórico.            |
 | `/sync`         | Detectar drift entre código y documentación. Solo reporta.                    |
 | `/cerrar`       | Forzar checklist de sincronización si sospechas que se saltó.                 |
+| `/cuestionar`   | Auditar la calidad real de los tests con mutation thinking.                   |
 
 ---
 
-## Qué hace el sistema (los 5 pilares)
+## Qué hace el sistema (los 6 pilares)
 
 ### 1. Entrevista inicial estructurada (BMADT)
 
@@ -72,27 +74,54 @@ Ejecuta un smoke test para verificar que todo arranca, y solo entonces permite e
 
 ### 3. Trazabilidad de decisiones (ADRs)
 
-Todas las decisiones no triviales (stack, librerías, cambios de scope) se registran en `decisions-log.md` como **Architecture Decision Records**:
+Todas las decisiones no triviales (stack, librerías, cambios de scope, adopción de mutation testing) se registran en `decisions-log.md` como **Architecture Decision Records**:
 
 - Contexto que motivó la decisión.
 - Decisión tomada.
 - Alternativas descartadas y por qué.
 - Consecuencias previstas.
 
-Las ADRs son **inmutables**: si cambias de opinión, no se borra lo anterior — se añade una nueva ADR y la antigua queda marcada como `Superseded por ADR-XXX`. Trazabilidad completa del porqué de cada decisión a lo largo del tiempo.
+Las ADRs son **inmutables**: si cambias de opinión, no se borra lo anterior — se añade una nueva ADR y la antigua queda marcada como `Superseded por ADR-XXX`.
 
 ### 4. Antidrift documental
 
-Al cerrar **cualquier tarea** de código, la IA debe mostrar un checklist visible marcando cada uno de los 7 docs del SSOT como:
+Al cerrar **cualquier tarea** de código, la IA muestra un checklist visible marcando cada uno de los 7 docs del SSOT como:
 
 - Actualizado (con descripción del cambio), o
 - Sin cambios (con justificación).
 
-Una tarea no está cerrada si el checklist no aparece. Esto resuelve el drift por diseño: los docs nunca se quedan atrás porque cada tarea obliga a revisarlos todos.
+Una tarea no está cerrada si el checklist no aparece. Los docs nunca se quedan atrás porque cada tarea obliga a revisarlos todos.
 
-### 5. Retomar proyectos tras pausas
+### 5. Testing sobre código legacy (characterization tests)
 
-`/hoy` lee los docs clave, ejecuta un mini health-check (tests en verde, tickets con commits, drift básico) y devuelve un briefing de 10 líneas:
+Cuando se aplica `/regularizar` con opción [4] sobre código que ya existe, la skill `legacy-testing-skill.md` se activa automáticamente si detecta:
+
+- Código sin tests previos con lógica sospechosa (validaciones raras, branches inaccesibles, error handling silencioso).
+- Divergencias entre el código y un contrato formal (OpenAPI, JSON Schema, tipos estrictos).
+- Indicación explícita del usuario de que el código tiene bugs conocidos.
+
+En ese caso, los tests generados distinguen dos categorías:
+
+- **`// SPEC: ...`** — comportamiento correcto y deseado. No debería cambiar.
+- **`// CHARACTERIZATION: ...`** — comportamiento actual, posiblemente incorrecto. Se captura tal cual para poder modificarlo después con evidencia.
+
+La IA propone. El humano decide qué es bug y qué es feature. Nunca se modifica código legacy sin red de seguridad primero.
+
+### 6. Cuestionamiento de calidad (mutation thinking)
+
+El comando `/cuestionar` audita la calidad real de la suite existente sin instalar herramientas:
+
+1. Elige alcance (archivo, módulo, backend entero).
+2. La IA propone 5+ mutaciones realistas sobre el código (cambiar operadores, valores, flujo, lógica de negocio).
+3. Evalúa si la suite actual detectaría cada una.
+4. Lista mutaciones "supervivientes" y propone los tests faltantes prioritarios.
+5. Ofrece ir más allá: instalar mutation testing real (Infection, StrykerJS, PIT, mutmut según stack) como decisión opt-in con ADR.
+
+Menciona property-based testing (fast-check, Hypothesis) si detecta invariantes claras, sin implementarlo automáticamente.
+
+### 7. Retomar proyectos tras pausas
+
+`/hoy` lee los docs clave, ejecuta un mini health-check y devuelve un briefing de 10 líneas:
 
 ```
 📋 Proyecto: [Nombre]
@@ -116,7 +145,7 @@ En 20 segundos tienes el estado del proyecto sin releer seis archivos.
 /
 ├── .windsurfrules              # Reglas globales cargadas por Cascade
 ├── .windsurf/
-│   └── workflows/              # 8 slash commands
+│   └── workflows/              # 9 slash commands
 │       ├── inicio.md
 │       ├── regularizar.md
 │       ├── hoy.md
@@ -124,7 +153,8 @@ En 20 segundos tienes el estado del proyecto sin releer seis archivos.
 │       ├── reparar.md
 │       ├── decidir.md
 │       ├── sync.md
-│       └── cerrar.md
+│       ├── cerrar.md
+│       └── cuestionar.md
 ├── docs/                       # SSOT - Single Source of Truth
 │   ├── prd.md                  # Qué es el producto y para quién
 │   ├── architecture.md         # Cómo está montado técnicamente
@@ -136,8 +166,10 @@ En 20 segundos tienes el estado del proyecto sin releer seis archivos.
 ├── prompts/
 │   ├── architect-brain.md      # Cerebro del sistema: protocolos On(...)
 │   └── skills/
-│       └── tests-skill.md      # Guía de generación de tests por stack
+│       ├── tests-skill.md           # Guía de tests por stack
+│       └── legacy-testing-skill.md  # Characterization tests para legacy
 ├── inicio-chat.txt             # Manual operativo completo
+├── LICENSE                     # MIT
 └── README.md                   # Este archivo
 ```
 
@@ -158,7 +190,14 @@ En 20 segundos tienes el estado del proyecto sin releer seis archivos.
 
 1. Copio la estructura a la raíz del proyecto existente.
 2. `/regularizar` → menú de opciones, elijo `[4] Regularizar + Cubrir con tests`.
-3. La IA escanea el código, identifica lógica crítica, instala framework de tests, genera tests para esa lógica, documenta qué cubrió y qué no, y crea tickets para las zonas pendientes.
+3. La IA escanea el código, identifica lógica crítica, detecta si hay código legacy sospechoso (y activa `legacy-testing-skill` si procede), instala framework de tests, genera tests distinguiendo SPEC y CHARACTERIZATION, y crea tickets para las zonas pendientes.
+
+**Auditar calidad de tests ya existentes:**
+
+1. `/cuestionar` → elige alcance.
+2. La IA propone mutaciones y evalúa cuáles detectaría la suite.
+3. Lista tests faltantes prioritarios.
+4. Decides si añades solo esos tests o si además instalas mutation testing real.
 
 ---
 
@@ -185,6 +224,8 @@ Resultado:
 5. **Tests como contrato** — un `.skip` durante más de una semana es un bug del roadmap.
 6. **Decisiones trazables** — si no está en `decisions-log.md`, no existe como decisión oficial.
 7. **Antidrift** — ninguna tarea se cierra sin el checklist de sincronización documental.
+8. **Legacy primero congelar, luego cambiar** — en código legacy, nunca modificar sin haber capturado antes el comportamiento actual.
+9. **Cobertura ≠ calidad** — un test que pasa no garantiza detectar bugs; la calidad se audita con mutation thinking.
 
 ---
 
@@ -192,7 +233,7 @@ Resultado:
 
 Construido iterativamente a partir de [`junior-doc-gen`](https://github.com/gicupc/junior-doc-gen) (versión anterior centrada solo en documentación con protocolo BMAD).
 
-Esta versión añade: testing integrado en el flujo, trazabilidad de decisiones con ADRs, antidrift por checklist obligatorio, y slash commands de Windsurf para invocar los protocolos fácilmente.
+Esta versión añade: testing integrado en el flujo, trazabilidad de decisiones con ADRs, antidrift por checklist obligatorio, slash commands de Windsurf para invocar los protocolos fácilmente, characterization tests sobre legacy, y auditoría de calidad con mutation thinking.
 
 ---
 
