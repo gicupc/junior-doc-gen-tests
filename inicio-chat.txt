@@ -1,0 +1,254 @@
+================================================================================
+ MANUAL OPERATIVO: ARCHITECT-BRAIN + TESTING + DECISIONS + SYNC + DATABASE
+================================================================================
+
+Sistema de scaffolding para Windsurf/Cascade que mantiene documentacion, codigo,
+tests, decisiones y base de datos sincronizados a lo largo del ciclo de vida
+del proyecto.
+
+--------------------------------------------------------------------------------
+ COMO SE USA EN 30 SEGUNDOS
+--------------------------------------------------------------------------------
+1. Copia toda esta estructura (.windsurf/, .windsurfrules, docs/, prompts/) en
+   la raiz del proyecto donde quieras trabajar.
+2. Abre Windsurf apuntando a la raiz del proyecto (no a una subcarpeta).
+3. En Cascade, escribe "/" y te aparecera el menu con los comandos disponibles.
+4. Elige el comando segun la situacion (ver tabla debajo) y deja que la IA
+   ejecute el protocolo.
+
+--------------------------------------------------------------------------------
+ SLASH COMMANDS DISPONIBLES (11 comandos)
+--------------------------------------------------------------------------------
+Los archivos .md de .windsurf/workflows/ son los comandos invocables. Escribe
+"/" en Cascade y aparecen todos en un desplegable.
+
++------------------+------------------------------------------------------------+
+| Comando          | Cuando usarlo                                              |
++------------------+------------------------------------------------------------+
+| /inicio          | Proyecto vacio. Entrevista BMADT + docs + setup de tests   |
+|                  | + setup de BD si aplica.                                   |
+| /onboarding      | Codebase ajeno (ejercicio bootcamp, PR de companero, debug |
+|                  | urgente). Mapa rapido en 6 secciones, sin generar docs.    |
+|                  | NUEVO en v4.3.                                             |
+| /regularizar     | Proyecto con codigo pero sin docs. Menu [1][2][3][4]. La   |
+|                  | opcion [4] incluye auditoria de BD si hay.                 |
+| /hoy             | "Que hacemos hoy." Briefing con sugerencia para el dia.    |
+| /nueva           | Anadir funcionalidad o modulo. Con interrupcion de         |
+|                  | seguridad antes de tocar codigo.                           |
+| /reparar         | Corregir un bug. Si no esta cubierto, primero escribe el   |
+|                  | test que lo reproduce, luego el fix.                       |
+| /decidir         | Cambiar una decision pasada (stack, testing, alcance, BD). |
+|                  | Propaga cambios a los docs afectados sin perder historico. |
+| /sync            | Detectar drift entre codigo y documentacion. Solo reporta. |
+| /cerrar          | Forzar checklist de sincronizacion si sospechas que se     |
+|                  | salto al cerrar una tarea anterior.                        |
+| /cuestionar      | Auditar la CALIDAD real de la suite de tests con mutation  |
+|                  | thinking. No instala nada; plantea mutaciones y detecta    |
+|                  | falsa confianza.                                           |
+| /revisar-bd      | Auditar la BD: modelo, seguridad, rendimiento, calidad de  |
+|                  | datos. Solo reporta, no modifica nada.                     |
++------------------+------------------------------------------------------------+
+
+Puedes pasar contexto despues del comando. Ejemplo:
+  /nueva quiero anadir exportacion a PDF en el modulo de prompts
+  /inicio aplicacion web para gestionar recetas, PHP 8 + MySQL + Bootstrap 5
+  /cuestionar audita los tests del modulo de validacion
+  /revisar-bd auditoria completa del modelo y datos
+
+--------------------------------------------------------------------------------
+ CICLO DE VIDA TIPICO
+--------------------------------------------------------------------------------
+Dia 1  (arranque)       -> /inicio
+Dias 1-N (desarrollo)   -> /nueva y /reparar para cada tarea
+Vuelves tras pausa      -> /hoy
+Cambias de opinion      -> /decidir
+Sospechas drift         -> /sync
+Dudas de la calidad     -> /cuestionar
+Sospechas BD            -> /revisar-bd
+Quieres forzar cierre   -> /cerrar
+
+Para proyectos que ya existen sin documentacion:
+Dia 1 (toma de control) -> /regularizar (elige opcion [4] para cubrir con tests)
+                            La auditoria de BD se ejecuta dentro si hay BD.
+Resto del ciclo         -> igual que arriba
+
+--------------------------------------------------------------------------------
+ QUE HACE CADA COMANDO (detalle)
+--------------------------------------------------------------------------------
+
+/inicio
+  Ejecuta On(project_start). Lanza la entrevista BMADT:
+    B (Beneficio)  - objetivo y valor del proyecto.
+    M (Mecanismo)  - stack tecnico e integraciones.
+    A (Alcance)    - modulos del MVP.
+    D (Datos)      - entidades y flujos criticos.
+    T (Testing)    - nivel de cobertura: basico, estandar o exhaustivo.
+  Al cerrar la entrevista, genera todos los docs en /docs/ (incluyendo
+  decisions-log.md con las ADRs iniciales), ejecuta On(testing_setup),
+  Y SI HAY BD, ejecuta tambien On(database_setup): elige motor + ORM,
+  identifica campos PII, genera docs/database-strategy.md, prepara
+  Testcontainers si aplica. BLOQUEA la escritura de codigo funcional
+  hasta que apruebes.
+
+/regularizar
+  Para proyectos existentes sin documentacion. Escanea codigo y BD si
+  existe, y ofrece:
+    [1] Regularizar          - genera blueprints y docs sin tocar tests.
+    [2] Evolucionar          - usa mejor /nueva directamente.
+    [3] Reparar              - usa mejor /reparar directamente.
+    [4] Regularizar + tests + auditar BD - todo lo anterior mas setup
+                                de tests, cobertura de logica critica,
+                                Y auditoria completa de BD si aplica.
+  En [4] carga tests-skill. Si detecta codigo sospechoso o divergencia
+  con contrato formal, carga TAMBIEN legacy-testing-skill. Si hay BD,
+  ejecuta On(database_audit) generando docs/database-audit.md.
+
+/hoy
+  Ejecuta On(resume_project). Lee los docs clave (incluido
+  database-strategy.md si existe), corre la suite de tests, detecta
+  drift basico, y presenta un briefing de 10 lineas con sugerencia
+  concreta para el dia.
+
+/nueva
+  Anadir funcionalidad. Activa interrupcion de seguridad que obliga a
+  actualizar user-stories.md, roadmap.md, y si aplica blueprints.md,
+  testing-strategy.md, database-strategy.md y decisions-log.md ANTES
+  de tocar codigo. Al terminar, ejecuta obligatoriamente On(task_complete)
+  con el checklist de sincronizacion visible.
+
+/reparar
+  Corregir un bug. Si el bug no esta cubierto por tests, el protocolo
+  obliga a escribir primero un test que lo reproduzca (rojo), y solo
+  despues implementar el fix (verde). Para bugs en BD, ademas exige
+  patron Expand-Contract si la reparacion es destructiva.
+
+/decidir
+  Revisar una decision pasada sin romper lo existente. Pregunta solo lo
+  que cambia, calcula el impacto en los docs afectados (architecture,
+  testing-strategy, database-strategy si toca BD), pide confirmacion,
+  anade nueva ADR al decisions-log, marca la anterior como superseded
+  y propaga los cambios.
+
+/sync
+  Ejecuta On(sync_check). Escanea codigo + BD vs docs y reporta
+  divergencias en 3 niveles (criticas, moderadas, menores). NO arregla
+  automaticamente: lista los problemas y pregunta cual abordar primero.
+
+/cerrar
+  Ejecuta On(task_complete) de forma explicita. Muestra el checklist
+  de sincronizacion documental con cada doc marcado como actualizado
+  o "sin cambios" con justificacion.
+
+/cuestionar
+  Audita la CALIDAD real de la suite de tests sin instalar herramientas.
+  Filosofia: cobertura no es calidad. La IA propone 5+ mutaciones
+  realistas, evalua si tu suite las detectaria, lista las que sobreviven
+  y propone tests faltantes. Ofrece instalar mutation testing real
+  (Infection, StrykerJS, PIT, mutmut) como decision opt-in con ADR.
+
+/revisar-bd
+  Audita la base de datos en 4 categorias:
+    1. MODELO: tipos, indices, FKs, audit fields, normalizacion.
+    2. SEGURIDAD: PII en plano, restricciones debiles, RLS, secrets.
+    3. RENDIMIENTO: N+1, queries lentas, indices faltantes (vivo via
+       pg_stat_statements si esta disponible, o estatico desde codigo).
+    4. CALIDAD DE DATOS: nulos, duplicados, rangos, integridad.
+  Genera docs/database-audit.md (reporte ejecutivo) y
+  docs/investigacion_seguridad.md (si hay hallazgos). Crea tickets en
+  roadmap.md por cada hallazgo critico/alto. NO modifica BD ni codigo.
+  La IA detecta, el humano decide, el humano repara con /reparar.
+
+--------------------------------------------------------------------------------
+ REGLAS DE ORO
+--------------------------------------------------------------------------------
+1. CENTRALIZACION
+   Toda documentacion (.md) vive exclusivamente en /docs/ de la raiz.
+
+2. NO PROLIFERACION
+   No se crean archivos nuevos para cambios individuales. Se editan los
+   maestros: prd.md, user-stories.md, roadmap.md, blueprints.md,
+   architecture.md, testing-strategy.md, database-strategy.md,
+   decisions-log.md.
+
+3. SINCRONIZACION
+   Cada ticket finalizado debe marcarse con [x] en el roadmap, tener sus
+   tests en verde, Y el checklist On(task_complete) visible en el chat.
+
+4. TESTS COMO CONTRATO
+   Un test en verde es un contrato verificable. Un test en .skip durante
+   mas de una semana se convierte en ticket del roadmap.
+
+5. DECISIONES TRAZABLES
+   Si no esta en decisions-log.md, no existe como decision oficial.
+   Las ADRs son inmutables: cuando cambia una decision se anade una nueva
+   ADR y la anterior queda marcada como superseded, pero su contenido
+   historico se conserva.
+
+6. ANTIDRIFT
+   Ninguna tarea se cierra sin mostrar el checklist de sincronizacion.
+
+7. LEGACY PRIMERO CONGELAR, LUEGO CAMBIAR
+   En codigo legacy, nunca modificar sin haber capturado antes el
+   comportamiento actual con characterization tests.
+
+8. COBERTURA NO ES CALIDAD
+   Un test que pasa no garantiza que detecte bugs. La calidad real se
+   audita con mutation thinking (/cuestionar).
+
+9. BD PRIMERO AUDITAR, LUEGO CAMBIAR
+   En proyectos con BD, ejecutar /revisar-bd antes de hacer cambios
+   destructivos. La IA detecta, el humano decide, el humano repara.
+
+--------------------------------------------------------------------------------
+ ESTRUCTURA DE ARCHIVOS
+--------------------------------------------------------------------------------
+/
+├── .windsurfrules            # Reglas cargadas por Cascade en cada sesion
+├── .windsurf/
+│   └── workflows/            # 10 slash commands invocables con /
+│       ├── inicio.md
+│       ├── regularizar.md
+│       ├── hoy.md
+│       ├── nueva.md
+│       ├── reparar.md
+│       ├── decidir.md
+│       ├── sync.md
+│       ├── cerrar.md
+│       ├── cuestionar.md     # Mutation thinking + auditoria de tests
+│       └── revisar-bd.md     # Auditoria de BD (modelo + seguridad +
+│                             #   rendimiento + calidad de datos)
+├── docs/                     # SSOT - Single Source of Truth
+│   ├── prd.md                # Que es el producto y para quien
+│   ├── architecture.md       # Como esta montado tecnicamente
+│   ├── blueprints.md         # Patrones de codigo del proyecto
+│   ├── user-stories.md       # Funcionalidades con criterios testeables
+│   ├── roadmap.md            # Tickets y progreso
+│   ├── testing-strategy.md   # Framework, convenciones, cobertura tests
+│   ├── database-strategy.md  # Motor, ORM, PII, migraciones, tests BD
+│   └── decisions-log.md      # ADRs (registro inmutable de decisiones)
+├── prompts/
+│   ├── architect-brain.md    # Cerebro del sistema: protocolos On(...)
+│   └── skills/
+│       ├── tests-skill.md          # Guia de generacion de tests
+│       ├── legacy-testing-skill.md # Characterization tests para legacy
+│       └── database-skill.md       # Diseno y auditoria de BD
+├── LICENSE                   # MIT
+├── README.md                 # Descripcion del sistema para GitHub
+└── inicio-chat.txt           # Este archivo
+
+--------------------------------------------------------------------------------
+ PROTOCOLO DE DEFENSA SI LA IA SE DESVIA
+--------------------------------------------------------------------------------
+Si en algun momento Windsurf ignora el sistema (escribe codigo sin actualizar
+docs, cierra una tarea sin checklist, modifica BD sin auditar antes, etc.),
+usa este recordatorio:
+
+  "Sigue el protocolo de .windsurfrules: consulta blueprints,
+   testing-strategy, database-strategy y decisions-log, y cierra
+   con checklist."
+
+Si el problema persiste, invoca /cerrar para forzar el checklist del trabajo
+reciente, /sync para auditar el estado real vs documentado, o /revisar-bd
+para auditar la BD si sospechas que se ha desviado.
+
+================================================================================
