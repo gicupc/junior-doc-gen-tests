@@ -1,6 +1,6 @@
 # Project Instructions for Claude Code
 
-Este proyecto usa el sistema **Architect-Brain v4.5** para garantizar calidad en codigo, documentacion, tests (unit + integracion + E2E + BDD + IA-asistido), base de datos y frontend.
+Este proyecto usa el sistema **Architect-Brain v4.6** para garantizar calidad en codigo, documentacion, tests (unit + integracion + E2E + BDD + IA-asistido), base de datos, frontend y cadena de suministro (supply chain).
 
 > **Nota:** Claude Code lee este archivo (`CLAUDE.md`); Windsurf lee `.windsurfrules`; Cursor lee `.cursor/rules/architect-brain.mdc`. Este archivo apunta a las mismas fuentes de verdad que esos otros, para que el sistema funcione identico en los tres entornos. NO duplica contenido.
 
@@ -11,9 +11,9 @@ Este proyecto usa el sistema **Architect-Brain v4.5** para garantizar calidad en
 Cuando inicies sesion en este proyecto, lee en este orden:
 
 1. **`.windsurfrules`** — reglas globales operativas del sistema (mismo contenido que aplicas tu, Claude Code, en cada turno).
-2. **`prompts/architect-brain.md`** — protocolos completos `On(...)`: project_start, testing_setup, database_setup, frontend_setup, database_audit, frontend_audit, task_complete, sync_check, ticket_close, implementation_phase, resume_project, revisit_decision.
+2. **`prompts/architect-brain.md`** — protocolos completos `On(...)`: project_start, testing_setup, bdd_setup, supply_chain_setup, supply_chain_audit, database_setup, frontend_setup, database_audit, frontend_audit, task_complete, sync_check, ticket_close, implementation_phase, resume_project, revisit_decision.
 3. **`AGENTS.md`** — resumen rapido y stack canonico.
-4. **`/docs/`** — SSOT del proyecto concreto en el que estas: `prd.md`, `architecture.md`, `blueprints.md`, `user-stories.md`, `roadmap.md`, `testing-strategy.md`, `database-strategy.md` (si hay BD), `frontend-strategy.md` (si hay frontend), `decisions-log.md`.
+4. **`/docs/`** — SSOT del proyecto concreto en el que estas: `prd.md`, `architecture.md`, `blueprints.md`, `user-stories.md`, `roadmap.md`, `testing-strategy.md`, `database-strategy.md` (si hay BD), `frontend-strategy.md` (si hay frontend), `supply-chain-strategy.md` (si usa npm registry), `decisions-log.md`.
 
 ---
 
@@ -34,6 +34,7 @@ Aunque Claude Code soporta `.claude/commands/` para slash commands nativos, este
 - `/revisar-bd` → `.windsurf/workflows/revisar-bd.md`
 - `/revisar-frontend` → `.windsurf/workflows/revisar-frontend.md`
 - `/bdd` → `.windsurf/workflows/bdd.md` *(nuevo en v4.5)*
+- `/revisar-supply-chain` → `.windsurf/workflows/revisar-supply-chain.md` *(nuevo en v4.6)*
 
 Skills auxiliares (cargar con `@` o automaticamente segun contexto):
 
@@ -42,6 +43,7 @@ Skills auxiliares (cargar con `@` o automaticamente segun contexto):
 - `prompts/skills/visual-testing-skill.md` — tests UI con axe + Playwright + visual diff + alternativas SaaS.
 - `prompts/skills/bdd-skill.md` — BDD con Gherkin, playwright-bdd, Three Amigos, anti-patrones IA *(nuevo en v4.5)*.
 - `prompts/skills/ai-testing-skill.md` — Playwright MCP/CLI, prompting, trazabilidad de prompts, GDPR + EU AI Act *(nuevo en v4.5)*.
+- `prompts/skills/supply-chain-skill.md` — defensas en 4 capas (minimumReleaseAge, allowBuilds, GitHub Actions hardening, OIDC pinning), respuesta a incidentes (TanStack, Shai-Hulud) *(nuevo en v4.6)*.
 - `prompts/skills/legacy-testing-skill.md` — characterization tests para legacy.
 - `prompts/skills/database-skill.md` — diseno y auditoria de BD.
 - `prompts/skills/frontend-skill.md` — diseno y auditoria de frontend.
@@ -66,6 +68,8 @@ Estas son las que aplicas tu, Claude Code, en cada turno. Para el detalle, lee `
 11. **BDD sin Three Amigos es disfraz tecnico**: adoptar BDD requiere conversacion previa con stakeholders no tecnicos.
 12. **Tests con IA trazables**: cada test generado por LLM lleva su `*.prompt.md` versionado y pasa code review humano antes de mergear.
 13. **AI literacy obligatoria + GDPR**: equipos que usan IA en testing deben tener formacion en uso responsable; PII no se envia a LLMs externos sin DPA valido.
+14. **Supply chain en 4 capas** *(nuevo en v4.6)*: `minimumReleaseAge` + `allowBuilds` + GitHub Actions hardening + OIDC pinning. Provenance SLSA valido NO es garantia (lo demostro el ataque TanStack del 11 mayo 2026).
+15. **Respuesta a incidente con orden critico** *(nuevo en v4.6)*: NO revocar token de GitHub antes de limpiar el daemon de persistencia. Algunos payloads ejecutan `rm -rf ~/` al detectar revocacion.
 
 ---
 
@@ -83,6 +87,7 @@ He recibido tu peticion. Segun el protocolo de calidad:
 6. ¿Esta peticion toca el frontend (componentes, paginas, estilos, a11y)? Si es si, ¿debo actualizar docs/frontend-strategy.md?
 7. ¿Esta peticion requiere un escenario BDD nuevo o modificado? Si es si, ¿ya tuvimos la conversacion Three Amigos?
 8. ¿Voy a usar IA para generar tests? Si es si, recordare la politica: *.prompt.md junto al test + code review humano.
+9. ¿Esta peticion toca package.json, lockfile, .npmrc, pnpm-workspace.yaml o .github/workflows/? Si es si, ¿debo actualizar docs/supply-chain-strategy.md?
 
 No tocare el codigo hasta que confirmes la sincronizacion documental.
 ```

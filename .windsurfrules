@@ -24,6 +24,7 @@ Antes de modificar, anadir o reparar codigo, DEBES preguntar:
 6. ¿Esta peticion toca el frontend (componentes, paginas, estilos, a11y)? Si es si, ¿debo actualizar `docs/frontend-strategy.md`?
 7. ¿Esta peticion requiere un escenario BDD nuevo o modificado (un `.feature`)? Si es si, ¿ya tuvimos la conversacion Three Amigos correspondiente?
 8. ¿Voy a usar IA (Cursor/Claude Code/Copilot) para generar tests en esta tarea? Si es si, recordare la politica de trazabilidad: `*.prompt.md` junto al test + code review humano obligatorio.
+9. ¿Esta peticion toca `package.json`, lockfile, `.npmrc`, `pnpm-workspace.yaml` o `.github/workflows/`? Si es si, ¿debo actualizar `docs/supply-chain-strategy.md` y verificar que las defensas siguen activas?
 
 No tocare el codigo hasta que confirmes la sincronizacion documental."
 
@@ -63,7 +64,13 @@ Si no hay codigo:
    - Configura cabeceras de seguridad (CSP, HSTS, X-Frame-Options, Referrer-Policy).
    - Genera `docs/frontend-strategy.md`.
    - Registra ADRs y tickets correspondientes (a11y WCAG 2.2 AA, CWV como DoD, RUM, i18n si aplica).
-7. Registra las decisiones iniciales (respuestas BMADT) en `decisions-log.md`.
+7. **Si el proyecto usa npm registry** (Node.js, JS/TS, cualquier stack con `package.json`), ejecuta tambien `On(supply_chain_setup)`:
+   - Carga `@prompts/skills/supply-chain-skill.md`.
+   - Detecta package manager y aplica defensas Capa 1 (`minimumReleaseAge`) y Capa 2 (`allowBuilds` / `ignore-scripts`).
+   - Audita workflows en `.github/workflows/` si existen (NO `pull_request_target` con checkout del fork; acciones pineadas a SHA).
+   - Genera `docs/supply-chain-strategy.md`.
+   - Registra ADRs y tickets correspondientes.
+8. Registra las decisiones iniciales (respuestas BMADT) en `decisions-log.md`.
 
 ---
 
@@ -94,6 +101,13 @@ Si hay codigo pero no hay `/docs/` completos:
      - Genera `docs/frontend-audit.md` y comparte hallazgos de seguridad con `docs/investigacion_seguridad.md`.
      - Genera `docs/frontend-strategy.md` documentando el estado actual.
      - Crea tickets en `roadmap.md` por hallazgos criticos y de severidad alta.
+   - **Si el proyecto usa npm registry** (`package.json` presente), ejecuta tambien `On(supply_chain_audit)`:
+     - Carga `@prompts/skills/supply-chain-skill.md`.
+     - Audita las 4 capas: dependency resolution, install-time execution, CI execution (GitHub Actions), publish path (OIDC trusted publishing).
+     - Cross-referencia el lockfile con bases publicas de paquetes comprometidos (TanStack, Shai-Hulud, axios, Trivy).
+     - Genera `docs/supply-chain-audit.md` y comparte hallazgos criticos/altos con `docs/investigacion_seguridad.md`.
+     - Genera `docs/supply-chain-strategy.md` documentando el estado actual.
+     - Crea tickets en `roadmap.md` por hallazgos criticos y de severidad alta.
    - Documenta en `docs/testing-strategy.md` qué se ha cubierto y qué queda pendiente.
    - Registra decisiones en `decisions-log.md`.
    - Anade tickets al `roadmap.md` por cada zona NO cubierta y por cada comportamiento sospechoso detectado.
@@ -113,6 +127,7 @@ Reconoce y ejecuta estos comandos cuando aparezcan en la conversacion:
 | "cuestiona los tests" / "audita la calidad de la suite" / "¿mis tests sirven?" | Ejecuta `/cuestionar` (mutation thinking) |
 | "revisa la base de datos" / "audita la BD" / "¿mi BD tiene problemas?" | Ejecuta `/revisar-bd` (auditoria de BD) |
 | "revisa el frontend" / "audita la UI" / "¿mi frontend cumple a11y/CWV?" | Ejecuta `/revisar-frontend` (auditoria de frontend) |
+| "revisa supply chain" / "audita las dependencias" / "¿mi npm install es seguro?" / "¿me afecto lo de TanStack?" | Ejecuta `/revisar-supply-chain` (auditoria de cadena de suministro) |
 | "dame un mapa rapido" / "no conozco este codigo" / "¿que tiene este repo?" | Ejecuta `/onboarding` (mapa de codebase ajeno, sin generar docs) |
 | "implementa el plan" / "vamos al codigo" / "ejecuta el plan paso a paso" | `On(implementation_phase)` (disciplina de paradas mid-task) |
 | "adoptemos BDD" / "vamos a hacer Gherkin" / "setup playwright-bdd" / "three amigos" | Ejecuta `/bdd` (adopcion de BDD con verificacion previa) |
@@ -212,6 +227,27 @@ Reconoce y ejecuta estos comandos cuando aparezcan en la conversacion:
 
 ---
 
+## SUPPLY CHAIN (obligatorio si el proyecto usa npm registry)
+- Todo proyecto nuevo con stack JS/TS pasa por `On(supply_chain_setup)` durante o despues del testing_setup.
+- **4 capas de defensa** que el sistema activa por defecto:
+  1. **Dependency resolution** — `minimumReleaseAge` (cooldown de 1+ dia), `blockExoticSubdeps`, `trustPolicy`.
+  2. **Install-time execution** — `allowBuilds` / `ignore-scripts` para bloquear scripts arbitrarios.
+  3. **CI execution** — NUNCA `pull_request_target` con checkout del fork. Pinear acciones a SHA, NO a tag. Permisos minimos por job.
+  4. **Publish path** — OIDC trusted publishing pineado a `workflow + branch`, branch protection en main, 2FA obligatorio.
+- **Defaults recomendados por package manager**:
+  - **pnpm 11+**: `minimumReleaseAge: 1440`, `blockExoticSubdeps: true`, `strictDepBuilds: true` (ya por defecto).
+  - **npm 11.10+**: `min-release-age=2d` en `.npmrc`.
+  - **Yarn Berry 4.10+**: `npmMinimalAgeGate: "3d"` en `.yarnrc.yml`.
+  - **Bun 1.3+**: `[install] minimumReleaseAge = 259200` en `bunfig.toml`.
+- `minimumReleaseAge` y `allowBuilds` NUNCA se desactivan sin ADR documentando el motivo y la fecha de revision.
+- En CI usar siempre `npm ci` / `pnpm install --frozen-lockfile` / `yarn install --immutable` / `bun install --frozen-lockfile`. NUNCA `npm install` en CI.
+- Lockfile (`package-lock.json` / `pnpm-lock.yaml` / `yarn.lock` / `bun.lock`) SIEMPRE commiteado.
+- **Respuesta a incidente de paquete comprometido**: NO revocar token de GitHub antes de limpiar el daemon de persistencia (vector del ataque TanStack: `rm -rf ~/` al revocar). Orden correcto: limpiar persistencia → aislar red → rotar credenciales.
+- Antes de tocar un proyecto JS/TS existente sin defensas activas, ejecutar `On(supply_chain_audit)` para entender el estado actual.
+- Carga `@prompts/skills/supply-chain-skill.md` cuando trabajes con dependencias, lockfiles, workflows de GitHub Actions o publicacion de paquetes.
+
+---
+
 ## DECISIONES (trazabilidad)
 - Toda decision no trivial se registra en `docs/decisions-log.md` como una ADR nueva.
 - Las ADRs son INMUTABLES: nunca se edita el contenido historico, solo se marca como `Superseded por ADR-XXX` cuando cambia.
@@ -240,3 +276,6 @@ Reconoce y ejecuta estos comandos cuando aparezcan en la conversacion:
 - **Tests con IA trazables:** cada test generado por LLM debe tener su `*.prompt.md` versionado junto al test, y pasar code review humano explicito antes de mergear. Tests en verde generados por IA sin revision son test theater.
 - **AI literacy obligatoria:** desde el 2 de febrero de 2025, equipos que usan IA deben formar a su personal en uso responsable. Aplica directamente al uso de IA en testing.
 - **GDPR en testing con IA:** NO enviar PII a LLMs externos sin DPA valido. Para datos sensibles, LLMs locales o redaccion previa.
+- **Defensa en 4 capas para supply chain:** dependency resolution + install-time execution + CI execution + publish path. `minimumReleaseAge` (1+ dia) bloquea zero-days de paquetes recien publicados. El ataque TanStack del 11 mayo 2026 demuestra que provenance SLSA valido NO es garantia: defender en capas.
+- **Lifecycle scripts denegados por defecto:** `allowBuilds` (pnpm) o `ignore-scripts` (npm) reducen el vector classico de worms npm (postinstall que roba credenciales).
+- **Respuesta a incidente con orden critico:** si se detecta paquete comprometido instalado, NO revocar token de GitHub antes de limpiar daemon de persistencia. Algunos payloads ejecutan `rm -rf ~/` al detectar revocacion.

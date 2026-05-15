@@ -1,6 +1,6 @@
 # Project Instructions for AI Agents
 
-Este proyecto usa el sistema **Architect-Brain v4.5** para garantizar calidad en codigo, documentacion, tests (unit + integracion + E2E + BDD + IA-asistido), base de datos y frontend (accesibilidad + Core Web Vitals + seguridad).
+Este proyecto usa el sistema **Architect-Brain v4.6** para garantizar calidad en codigo, documentacion, tests (unit + integracion + E2E + BDD + IA-asistido), base de datos, frontend (accesibilidad + Core Web Vitals + seguridad) y cadena de suministro (supply chain).
 
 Este archivo sigue el estandar `AGENTS.md` (donado al Linux Foundation en diciembre 2025, soportado nativamente por Cursor, Windsurf, Copilot, Codex, Zed, Warp, Aider, Devin y otros). Para Windsurf, las reglas activas estan ademas en `.windsurfrules`.
 
@@ -28,6 +28,7 @@ Escribe `/` en el chat de Cascade para ver los slash commands:
 - `/revisar-bd` — auditar base de datos (4 categorias).
 - `/revisar-frontend` — auditar frontend (stack, seguridad, CWV, a11y WCAG 2.2 AA).
 - `/bdd` — adoptar BDD (Three Amigos + playwright-bdd o @cucumber/cucumber). **Nuevo en v4.5.**
+- `/revisar-supply-chain` — auditar cadena de suministro: dependencias, lockfile, scripts, GitHub Actions, publish path. Cross-referencia con incidentes publicos (TanStack, Shai-Hulud, axios, Trivy). **Nuevo en v4.6.**
 
 Skills auxiliares (carga manual con `@`):
 - `prompts/skills/tests-skill.md` — convenciones de tests unitarios por stack.
@@ -35,6 +36,7 @@ Skills auxiliares (carga manual con `@`):
 - `prompts/skills/visual-testing-skill.md` — tests UI con axe + Playwright + visual diff + alternativas SaaS.
 - `prompts/skills/bdd-skill.md` — BDD con Gherkin, playwright-bdd, Three Amigos, anti-patrones IA. **Nuevo en v4.5.**
 - `prompts/skills/ai-testing-skill.md` — Playwright MCP/CLI, prompting, trazabilidad de prompts, GDPR + EU AI Act. **Nuevo en v4.5.**
+- `prompts/skills/supply-chain-skill.md` — defensas en 4 capas (minimumReleaseAge, allowBuilds, GitHub Actions hardening, OIDC pinning), respuesta a incidentes con orden critico (TanStack, Shai-Hulud). **Nuevo en v4.6.**
 - `prompts/skills/legacy-testing-skill.md` — characterization tests para legacy.
 - `prompts/skills/database-skill.md` — diseno y auditoria de BD.
 - `prompts/skills/frontend-skill.md` — diseno y auditoria de frontend.
@@ -81,6 +83,8 @@ Razon: este stack es el que las herramientas IA generan mejor por defecto en 202
 11. **BDD sin Three Amigos es disfraz tecnico:** adoptar BDD requiere conversacion previa con stakeholders no tecnicos. Sin conversacion, los `.feature` files no aportan valor real.
 12. **Tests con IA trazables:** cada test generado por LLM lleva su `*.prompt.md` versionado y pasa code review humano explicito antes de mergear.
 13. **AI literacy obligatoria + GDPR:** equipos que usan IA en testing deben tener formacion en uso responsable (obligatorio desde 2 febrero 2025); PII no se envia a LLMs externos sin DPA valido.
+14. **Supply chain en 4 capas** *(nuevo en v4.6)*: `minimumReleaseAge` (cooldown 1+ dia) + `allowBuilds` (deny by default) + GitHub Actions hardening (NO `pull_request_target` con checkout de fork, acciones pineadas a SHA) + OIDC pinning a workflow+branch. Provenance SLSA valido NO es garantia (lo demostro el ataque TanStack del 11 mayo 2026).
+15. **Respuesta a incidente con orden critico** *(nuevo en v4.6)*: si se detecta paquete comprometido, NO revocar token de GitHub antes de limpiar daemon de persistencia. Algunos payloads ejecutan `rm -rf ~/` al detectar revocacion.
 
 ## SSOT (Single Source of Truth)
 
@@ -93,4 +97,5 @@ Los archivos `.md` de `/docs/` son la fuente de verdad del proyecto:
 - `testing-strategy.md` — framework, convenciones, cobertura de tests.
 - `database-strategy.md` — motor, ORM, PII, migraciones (si hay BD).
 - `frontend-strategy.md` — stack, MCP, a11y, CWV, visual testing (si hay frontend).
+- `supply-chain-strategy.md` — package manager, defensas 4 capas, plan de respuesta a incidentes (si usa npm registry).
 - `decisions-log.md` — ADRs inmutables.

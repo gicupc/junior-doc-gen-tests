@@ -1,12 +1,14 @@
 ================================================================================
- MANUAL OPERATIVO: ARCHITECT-BRAIN v4.5
- (Testing 2026 Edition: BDD + Integration + AI-Assisted + Frontend + MCP + BD)
+ MANUAL OPERATIVO: ARCHITECT-BRAIN v4.6
+ (Supply Chain Security Edition + Testing 2026 BDD + Integration + AI-Assisted +
+  Frontend + MCP + BD)
 ================================================================================
 
 Sistema de scaffolding para Windsurf/Cascade que mantiene documentacion, codigo,
-tests (unit + integracion + E2E + BDD + IA-asistido), decisiones, base de datos
-y frontend (accesibilidad + Core Web Vitals + seguridad) sincronizados a lo largo
-del ciclo de vida del proyecto.
+tests (unit + integracion + E2E + BDD + IA-asistido), decisiones, base de datos,
+frontend (accesibilidad + Core Web Vitals + seguridad) y cadena de suministro
+(npm + GitHub Actions + OIDC publishing) sincronizados a lo largo del ciclo de
+vida del proyecto.
 
 --------------------------------------------------------------------------------
  COMO SE USA EN 30 SEGUNDOS
@@ -19,7 +21,7 @@ del ciclo de vida del proyecto.
    ejecute el protocolo.
 
 --------------------------------------------------------------------------------
- SLASH COMMANDS DISPONIBLES (13 comandos)
+ SLASH COMMANDS DISPONIBLES (14 comandos)
 --------------------------------------------------------------------------------
 Los archivos .md de .windsurf/workflows/ son los comandos invocables. Escribe
 "/" en Cascade y aparecen todos en un desplegable.
@@ -28,17 +30,19 @@ Los archivos .md de .windsurf/workflows/ son los comandos invocables. Escribe
 | Comando              | Cuando usarlo                                          |
 +----------------------+--------------------------------------------------------+
 | /inicio              | Proyecto vacio. Entrevista BMADT + docs + setup tests  |
-|                      | + setup BD si aplica + setup FRONTEND si aplica.       |
+|                      | + setup BD si aplica + setup FRONTEND si aplica +      |
+|                      | setup SUPPLY CHAIN si usa npm registry.                |
 | /onboarding          | Codebase ajeno. Mapa rapido en 6 secciones, sin docs.  |
 | /regularizar         | Proyecto con codigo pero sin docs. Menu [1][2][3][4].  |
-|                      | La opcion [4] incluye auditoria BD y frontend.         |
+|                      | La opcion [4] incluye auditoria BD, frontend y supply  |
+|                      | chain.                                                 |
 | /hoy                 | "Que hacemos hoy." Briefing con sugerencia para el dia.|
 | /nueva               | Anadir funcionalidad. Interrupcion de seguridad antes  |
 |                      | de tocar codigo.                                       |
 | /reparar             | Corregir un bug. Si no esta cubierto, primero el test  |
 |                      | que lo reproduce, luego el fix.                        |
 | /decidir             | Cambiar una decision pasada (stack, testing, BD,       |
-|                      | frontend). Propaga sin perder historico.               |
+|                      | frontend, supply chain). Propaga sin perder historico. |
 | /sync                | Detectar drift entre codigo y documentacion.           |
 | /cerrar              | Forzar checklist de sincronizacion.                    |
 | /cuestionar          | Auditar la CALIDAD real de la suite de tests con       |
@@ -50,7 +54,12 @@ Los archivos .md de .windsurf/workflows/ son los comandos invocables. Escribe
 | /bdd                 | Adoptar BDD: verifica aplicabilidad, instala           |
 |                      | playwright-bdd o @cucumber/cucumber, ofrece primer     |
 |                      | Three Amigos asistido, genera primer .feature validado |
-|                      | por humano. NUEVO v4.5.                                |
+|                      | por humano. v4.5.                                      |
+| /revisar-supply-chain| Auditar cadena de suministro: dependency resolution,   |
+|                      | install-time execution, CI execution (GitHub Actions), |
+|                      | publish path (OIDC). Cross-referencia con incidentes   |
+|                      | publicos (TanStack, Shai-Hulud, axios, Trivy). Solo    |
+|                      | reporta. NUEVO v4.6.                                   |
 +----------------------+--------------------------------------------------------+
 
 Puedes pasar contexto despues del comando. Ejemplo:
@@ -212,7 +221,53 @@ Resto del ciclo         -> igual que arriba
     7. Genera primer .feature validado por humano antes de step definitions.
     8. Genera step definitions reutilizando los existentes (no duplica).
     9. Registra ADR de adopcion de BDD y anade tickets al roadmap.
-   10. Cierre con On(task_complete). NUEVO v4.5.
+   10. Cierre con On(task_complete). v4.5.
+
+/revisar-supply-chain
+  Audita la cadena de suministro de un proyecto JS/TS (NUEVO v4.6).
+  Solo aplica si existe package.json. Las 4 capas de defensa:
+    CAPA 1 - DEPENDENCY RESOLUTION:
+      - Lockfile commiteado.
+      - minimumReleaseAge activo (pnpm: 1440 min, npm: 2d, yarn: 3d, bun: 3d).
+      - blockExoticSubdeps activo (pnpm 11).
+      - Direct dependencies sin URLs exoticas (github:, tarball URLs).
+      - trustPolicy: no-downgrade (pnpm).
+    CAPA 2 - INSTALL-TIME EXECUTION:
+      - strictDepBuilds activo (pnpm).
+      - allowBuilds definido con paquetes legitimos.
+      - ignore-scripts (npm clasico) si aplica.
+      - Paquetes con lifecycle scripts revisados.
+    CAPA 3 - CI EXECUTION (GitHub Actions):
+      - NO pull_request_target con checkout del fork ("Pwn Request").
+      - Cache no compartida entre PR y release.
+      - Acciones pineadas a SHA (no tag mutable).
+      - permissions: {} explicito.
+      - Secrets no accesibles desde workflows de PR.
+    CAPA 4 - PUBLISH PATH (OIDC):
+      - OIDC en lugar de PAT.
+      - Trusted publisher pineado a workflow + branch.
+      - Branch protection en main con block force pushes.
+      - 2FA activado en cuentas con permiso de publicacion.
+      - Lockfile no expone _authToken ni _password.
+  Cross-referencia el lockfile con bases publicas de paquetes
+  comprometidos: TanStack mayo 2026 (GHSA-g7cv-rxg3-hmpx), Shai-Hulud
+  (sep 2025 + ondas), axios 1.14.1/0.30.4, Trivy con tags repointed.
+  Genera docs/supply-chain-audit.md con hallazgos por severidad. Crea
+  tickets en roadmap.md por hallazgos criticos y altos. Comparte con
+  docs/investigacion_seguridad.md. NO modifica .npmrc, pnpm-workspace,
+  workflows ni dependencias. La IA detecta, el humano decide, el humano
+  arregla.
+
+  RESPUESTA A INCIDENTE - ORDEN CRITICO si detecta paquete comprometido:
+    1. NO revocar token de GitHub todavia (vector rm -rf ~/ al revocar).
+    2. Limpiar daemon de persistencia (gh-token-monitor en LaunchAgents/
+       systemd/ Task Scheduler).
+    3. Buscar payloads residuales (router_runtime.js, setup.mjs,
+       tanstack_runner.js) en ~/.claude, ~/.vscode.
+    4. Aislar la maquina de la red.
+    5. Rotar TODAS las credenciales accesibles desde la maquina.
+    6. Auditar versiones publicadas por la cuenta (worm self-propagation).
+    7. Documentar como ADR de incidente.
 
 --------------------------------------------------------------------------------
  REGLAS DE ORO
@@ -293,6 +348,29 @@ Resto del ciclo         -> igual que arriba
     educacion, salud, justicia), los tests forman parte del expediente de
     calidad y se archivan junto a prompts y revisiones.
 
+18. SUPPLY CHAIN EN 4 CAPAS  (NUEVO v4.6)
+    minimumReleaseAge (cooldown 1+ dia) + allowBuilds (deny by default) +
+    GitHub Actions hardening (NO pull_request_target con checkout de fork,
+    acciones pineadas a SHA) + OIDC trusted publishing pineado a
+    workflow+branch. Provenance SLSA valido NO es garantia: el ataque
+    TanStack del 11 mayo 2026 publico 84 versiones maliciosas con SLSA
+    Build Level 3 provenance VALIDO desde el workflow legitimo. Defender
+    en 4 capas, no en 1.
+
+19. LIFECYCLE SCRIPTS DENEGADOS POR DEFECTO  (NUEVO v4.6)
+    allowBuilds (pnpm) o ignore-scripts (npm) reducen el vector clasico
+    de worms npm: postinstall que descarga payload y roba credenciales
+    (axios marzo 2026, Shai-Hulud, Trivy). Aprobaciones explicitas
+    documentadas con justificacion (binario nativo legitimo) son lo unico
+    que se permite ejecutar.
+
+20. RESPUESTA A INCIDENTE CON ORDEN CRITICO  (NUEVO v4.6)
+    Si se detecta paquete comprometido instalado, NO revocar token de
+    GitHub antes de limpiar daemon de persistencia. Algunos payloads
+    (Mini Shai-Hulud, TanStack) ejecutan rm -rf ~/ cuando detectan
+    revocacion. Orden correcto: limpiar persistencia -> aislar red ->
+    rotar credenciales -> auditar blast radius -> documentar ADR.
+
 --------------------------------------------------------------------------------
  ESTRUCTURA DE ARCHIVOS
 --------------------------------------------------------------------------------
@@ -301,7 +379,7 @@ Resto del ciclo         -> igual que arriba
 ├── AGENTS.md                          # Estandar AGENTS.md (Linux Foundation)
 ├── CLAUDE.md                          # Soporte Claude Code
 ├── .windsurf/
-│   └── workflows/                     # 13 slash commands invocables con /
+│   └── workflows/                     # 14 slash commands invocables con /
 │       ├── inicio.md
 │       ├── regularizar.md
 │       ├── hoy.md
@@ -314,7 +392,8 @@ Resto del ciclo         -> igual que arriba
 │       ├── cuestionar.md              # Mutation thinking
 │       ├── revisar-bd.md              # Auditoria de BD
 │       ├── revisar-frontend.md        # Auditoria de frontend
-│       └── bdd.md                     # Adopcion BDD (NUEVO v4.5)
+│       ├── bdd.md                     # Adopcion BDD (v4.5)
+│       └── revisar-supply-chain.md    # Auditoria supply chain (NUEVO v4.6)
 ├── docs/                              # SSOT - Single Source of Truth
 │   ├── prd.md                         # Que es el producto y para quien
 │   ├── architecture.md                # Como esta montado tecnicamente
@@ -324,15 +403,17 @@ Resto del ciclo         -> igual que arriba
 │   ├── testing-strategy.md            # Framework, convenciones, cobertura
 │   ├── database-strategy.md           # Motor, ORM, PII, migraciones (si BD)
 │   ├── frontend-strategy.md           # Stack, MCP, a11y, CWV (si frontend)
+│   ├── supply-chain-strategy.md       # Defensas 4 capas (si npm) (NUEVO v4.6)
 │   └── decisions-log.md               # ADRs (registro inmutable)
 ├── prompts/
 │   ├── architect-brain.md             # Cerebro: protocolos On(...)
-│   └── skills/                        # 9 skills
+│   └── skills/                        # 10 skills
 │       ├── tests-skill.md             # Tests unitarios por stack
-│       ├── integration-testing-skill.md  # Supertest + MSW + Testcontainers (NUEVO v4.5)
+│       ├── integration-testing-skill.md  # Supertest + MSW + Testcontainers (v4.5)
 │       ├── visual-testing-skill.md    # Tests UI + axe + Playwright
-│       ├── bdd-skill.md               # BDD + Gherkin + Three Amigos (NUEVO v4.5)
-│       ├── ai-testing-skill.md        # Playwright MCP/CLI + GDPR + AI Act (NUEVO v4.5)
+│       ├── bdd-skill.md               # BDD + Gherkin + Three Amigos (v4.5)
+│       ├── ai-testing-skill.md        # Playwright MCP/CLI + GDPR + AI Act (v4.5)
+│       ├── supply-chain-skill.md      # Defensas 4 capas + respuesta incidente (NUEVO v4.6)
 │       ├── legacy-testing-skill.md    # Characterization tests para legacy
 │       ├── database-skill.md          # Diseno y auditoria de BD
 │       ├── frontend-skill.md          # Diseno y auditoria de frontend
@@ -345,17 +426,20 @@ Resto del ciclo         -> igual que arriba
  PROTOCOLO DE DEFENSA SI LA IA SE DESVIA
 --------------------------------------------------------------------------------
 Si en algun momento Windsurf ignora el sistema (escribe codigo sin actualizar
-docs, cierra una tarea sin checklist, modifica BD/frontend sin auditar antes,
-adopta BDD sin Three Amigos previo, genera tests con IA sin trazabilidad de
-prompts, etc.), usa este recordatorio:
+docs, cierra una tarea sin checklist, modifica BD/frontend/supply-chain sin
+auditar antes, adopta BDD sin Three Amigos previo, genera tests con IA sin
+trazabilidad de prompts, desactiva minimumReleaseAge sin ADR, etc.), usa este
+recordatorio:
 
   "Sigue el protocolo de .windsurfrules: consulta blueprints,
-   testing-strategy, database-strategy, frontend-strategy y
-   decisions-log, y cierra con checklist."
+   testing-strategy, database-strategy, frontend-strategy,
+   supply-chain-strategy y decisions-log, y cierra con checklist."
 
 Si el problema persiste, invoca /cerrar para forzar el checklist del trabajo
 reciente, /sync para auditar el estado real vs documentado, /revisar-bd o
-/revisar-frontend para auditar BD o frontend si sospechas que se ha desviado.
+/revisar-frontend para auditar BD o frontend si sospechas que se ha desviado,
+/revisar-supply-chain si sospechas que las defensas de cadena de suministro
+estan rotas o instalaste algo dudoso.
 Si se intenta adoptar BDD sin discusion previa, invoca /bdd explicitamente:
 el comando verifica las precondiciones antes de instalar nada.
 
