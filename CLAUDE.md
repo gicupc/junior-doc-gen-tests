@@ -1,6 +1,6 @@
 # Project Instructions for Claude Code
 
-Este proyecto usa el sistema **Architect-Brain v4.4** para garantizar calidad en codigo, documentacion, tests, base de datos y frontend.
+Este proyecto usa el sistema **Architect-Brain v4.5** para garantizar calidad en codigo, documentacion, tests (unit + integracion + E2E + BDD + IA-asistido), base de datos y frontend.
 
 > **Nota:** Claude Code lee este archivo (`CLAUDE.md`); Windsurf lee `.windsurfrules`; Cursor lee `.cursor/rules/architect-brain.mdc`. Este archivo apunta a las mismas fuentes de verdad que esos otros, para que el sistema funcione identico en los tres entornos. NO duplica contenido.
 
@@ -33,14 +33,18 @@ Aunque Claude Code soporta `.claude/commands/` para slash commands nativos, este
 - `/cuestionar` → `.windsurf/workflows/cuestionar.md`
 - `/revisar-bd` → `.windsurf/workflows/revisar-bd.md`
 - `/revisar-frontend` → `.windsurf/workflows/revisar-frontend.md`
+- `/bdd` → `.windsurf/workflows/bdd.md` *(nuevo en v4.5)*
 
 Skills auxiliares (cargar con `@` o automaticamente segun contexto):
 
-- `prompts/skills/tests-skill.md` — convenciones de tests por stack.
+- `prompts/skills/tests-skill.md` — convenciones de tests unitarios por stack.
+- `prompts/skills/integration-testing-skill.md` — Supertest, MSW, Testcontainers para integration tests *(nuevo en v4.5)*.
+- `prompts/skills/visual-testing-skill.md` — tests UI con axe + Playwright + visual diff + alternativas SaaS.
+- `prompts/skills/bdd-skill.md` — BDD con Gherkin, playwright-bdd, Three Amigos, anti-patrones IA *(nuevo en v4.5)*.
+- `prompts/skills/ai-testing-skill.md` — Playwright MCP/CLI, prompting, trazabilidad de prompts, GDPR + EU AI Act *(nuevo en v4.5)*.
 - `prompts/skills/legacy-testing-skill.md` — characterization tests para legacy.
 - `prompts/skills/database-skill.md` — diseno y auditoria de BD.
 - `prompts/skills/frontend-skill.md` — diseno y auditoria de frontend.
-- `prompts/skills/visual-testing-skill.md` — tests UI con axe + Playwright + visual diff.
 - `prompts/skills/prompt-skill.md` — manual del usuario para redactar prompts profesionales (RACEO).
 
 ---
@@ -59,6 +63,9 @@ Estas son las que aplicas tu, Claude Code, en cada turno. Para el detalle, lee `
 8. **Implementacion paso a paso**: si el plan toca >2 archivos, aplicar `On(implementation_phase)` con paradas obligatorias entre archivos.
 9. **Cero `any` en frontend**, cero secretos en `NEXT_PUBLIC_*`/`VITE_*`/`PUBLIC_*`, validacion cliente Y servidor con Zod.
 10. **Codigo IA bajo revision**: outputs de v0/Lovable/Bolt/Figma Make pasan por revision humana antes de produccion.
+11. **BDD sin Three Amigos es disfraz tecnico**: adoptar BDD requiere conversacion previa con stakeholders no tecnicos.
+12. **Tests con IA trazables**: cada test generado por LLM lleva su `*.prompt.md` versionado y pasa code review humano antes de mergear.
+13. **AI literacy obligatoria + GDPR**: equipos que usan IA en testing deben tener formacion en uso responsable; PII no se envia a LLMs externos sin DPA valido.
 
 ---
 
@@ -74,6 +81,8 @@ He recibido tu peticion. Segun el protocolo de calidad:
 4. ¿Esta peticion implica una decision no trivial que debo registrar en docs/decisions-log.md?
 5. ¿Esta peticion toca la base de datos? Si es si, ¿debo actualizar docs/database-strategy.md?
 6. ¿Esta peticion toca el frontend (componentes, paginas, estilos, a11y)? Si es si, ¿debo actualizar docs/frontend-strategy.md?
+7. ¿Esta peticion requiere un escenario BDD nuevo o modificado? Si es si, ¿ya tuvimos la conversacion Three Amigos?
+8. ¿Voy a usar IA para generar tests? Si es si, recordare la politica: *.prompt.md junto al test + code review humano.
 
 No tocare el codigo hasta que confirmes la sincronizacion documental.
 ```

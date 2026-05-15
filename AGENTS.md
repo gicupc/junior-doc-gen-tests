@@ -1,6 +1,6 @@
 # Project Instructions for AI Agents
 
-Este proyecto usa el sistema **Architect-Brain v4.4** para garantizar calidad en codigo, documentacion, tests, base de datos y frontend (accesibilidad + Core Web Vitals + seguridad).
+Este proyecto usa el sistema **Architect-Brain v4.5** para garantizar calidad en codigo, documentacion, tests (unit + integracion + E2E + BDD + IA-asistido), base de datos y frontend (accesibilidad + Core Web Vitals + seguridad).
 
 Este archivo sigue el estandar `AGENTS.md` (donado al Linux Foundation en diciembre 2025, soportado nativamente por Cursor, Windsurf, Copilot, Codex, Zed, Warp, Aider, Devin y otros). Para Windsurf, las reglas activas estan ademas en `.windsurfrules`.
 
@@ -27,13 +27,17 @@ Escribe `/` en el chat de Cascade para ver los slash commands:
 - `/cuestionar` — auditar calidad de tests con mutation thinking.
 - `/revisar-bd` — auditar base de datos (4 categorias).
 - `/revisar-frontend` — auditar frontend (stack, seguridad, CWV, a11y WCAG 2.2 AA).
+- `/bdd` — adoptar BDD (Three Amigos + playwright-bdd o @cucumber/cucumber). **Nuevo en v4.5.**
 
 Skills auxiliares (carga manual con `@`):
-- `prompts/skills/tests-skill.md` — convenciones de tests por stack.
+- `prompts/skills/tests-skill.md` — convenciones de tests unitarios por stack.
+- `prompts/skills/integration-testing-skill.md` — Supertest, MSW, Testcontainers para integration tests. **Nuevo en v4.5.**
+- `prompts/skills/visual-testing-skill.md` — tests UI con axe + Playwright + visual diff + alternativas SaaS.
+- `prompts/skills/bdd-skill.md` — BDD con Gherkin, playwright-bdd, Three Amigos, anti-patrones IA. **Nuevo en v4.5.**
+- `prompts/skills/ai-testing-skill.md` — Playwright MCP/CLI, prompting, trazabilidad de prompts, GDPR + EU AI Act. **Nuevo en v4.5.**
 - `prompts/skills/legacy-testing-skill.md` — characterization tests para legacy.
 - `prompts/skills/database-skill.md` — diseno y auditoria de BD.
 - `prompts/skills/frontend-skill.md` — diseno y auditoria de frontend.
-- `prompts/skills/visual-testing-skill.md` — tests de componente con axe + E2E con Playwright + visual diff.
 - `prompts/skills/prompt-skill.md` — manual del usuario para redactar prompts profesionales (patron RACEO).
 
 ## Stack canonico para proyectos NUEVOS con frontend (2026)
@@ -74,6 +78,9 @@ Razon: este stack es el que las herramientas IA generan mejor por defecto en 202
 8. **Implementacion paso a paso:** si un plan toca mas de 2 archivos, aplicar `On(implementation_phase)` con paradas obligatorias entre archivos.
 9. **Prompts profesionales:** consultar `prompt-skill.md` para redactar prompts complejos siguiendo el patron RACEO.
 10. **Codigo IA bajo revision:** outputs de v0/Lovable/Bolt/Figma Make pasan obligatoriamente por revision humana en Cursor/Windsurf/Claude Code antes de produccion.
+11. **BDD sin Three Amigos es disfraz tecnico:** adoptar BDD requiere conversacion previa con stakeholders no tecnicos. Sin conversacion, los `.feature` files no aportan valor real.
+12. **Tests con IA trazables:** cada test generado por LLM lleva su `*.prompt.md` versionado y pasa code review humano explicito antes de mergear.
+13. **AI literacy obligatoria + GDPR:** equipos que usan IA en testing deben tener formacion en uso responsable (obligatorio desde 2 febrero 2025); PII no se envia a LLMs externos sin DPA valido.
 
 ## SSOT (Single Source of Truth)
 

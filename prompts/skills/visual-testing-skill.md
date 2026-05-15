@@ -1,6 +1,8 @@
 # Skill: Visual & Accessibility Testing
 
-Esta skill se activa cuando el proyecto tiene frontend y se desea cerrar el loop de validación visual y de accesibilidad de forma automática. Es complementaria a `tests-skill.md`: lo que aquella es para lógica pura, esta lo es para UI renderizada.
+Esta skill se activa cuando el proyecto tiene frontend y se desea cerrar el loop de validación visual y de accesibilidad de forma automática. Es complementaria a `tests-skill.md` (lógica pura), `integration-testing-skill.md` (capa intermedia) y `bdd-skill.md` (aceptación).
+
+Cuando uses agentes IA (Cursor, Claude Code, Copilot) para generar tests E2E, **carga además `ai-testing-skill.md`**: cubre Playwright MCP/CLI, patrones de prompting, anti-patrones, trazabilidad de prompts y cumplimiento normativo (GDPR, EU AI Act).
 
 ---
 
@@ -166,7 +168,7 @@ test.describe('Login flow', () => {
 - Multi-navegador real (Chromium + Firefox + Safari).
 - Multi-tab y multi-context nativos.
 - `@axe-core/playwright` es la integración oficial recomendada.
-- Soporta Playwright MCP server para que el agente IA pueda interactuar con el navegador desde el chat.
+- Soporta **Playwright MCP** y **Playwright CLI** para que el agente IA pueda generar y mantener tests E2E desde el chat o el filesystem. Ver `ai-testing-skill.md` para setup, prompting y gates en CI.
 
 ### Loop visual con pixelmatch (opcional pero potente)
 
@@ -229,6 +231,26 @@ test('dashboard matches design baseline', async ({ page }, testInfo) => {
 **Cuándo NO montar pixelmatch:**
 - Proyectos con UI dinámica (mucha animación, datos en tiempo real, anuncios). El diff será siempre rojo.
 - Proyectos sin diseño de partida estricto. El a11y test ya es suficiente.
+
+---
+
+## Alternativas SaaS para visual regression
+
+Montar `pixelmatch` da control total sin coste, pero hay plataformas SaaS que aportan colaboración, baselines compartidos entre branches y UI de aprobación de diffs:
+
+| Herramienta | Cuándo elegirla | Notas |
+|---|---|---|
+| **Chromatic** | El proyecto ya usa Storybook | Free tier limitado; integración nativa con Storybook |
+| **Percy** (BrowserStack) | El equipo ya usa BrowserStack | Free tier 5k snapshots/mes |
+| **Applitools** | Suite enterprise grande, necesita visual AI semántico | Pricing por contacto; el más caro |
+| **Argos CI** | Alternativa open-friendly para Playwright/Cypress | Free tier generoso |
+| **Lost Pixel** | Open source self-hosted o cloud | Free OSS; opción más flexible |
+
+Recomendación por escenario: Chromatic si Storybook, Argos CI o Lost Pixel para empezar barato con Playwright, Applitools si la suite es grande y necesitas visual AI semántico, Percy si ya pagas BrowserStack.
+
+La decisión se documenta en `docs/frontend-strategy.md` como ADR (criterios: stack existente, coste, necesidad de visual AI semántico, control sobre baselines).
+
+Ver además `ai-testing-skill.md` para la diferencia entre **visual regression con ML clásico** (Chromatic, Percy, Argos, Lost Pixel) y **visual AI semántico** (Applitools nivel avanzado, Mabl). No confundirlos: el semántico es más tolerante pero menos determinista.
 
 ---
 

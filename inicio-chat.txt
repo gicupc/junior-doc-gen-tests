@@ -1,11 +1,12 @@
 ================================================================================
- MANUAL OPERATIVO: ARCHITECT-BRAIN v4.4
- (Frontend + MCP + Testing + Decisions + Sync + Database + Implementation Phase)
+ MANUAL OPERATIVO: ARCHITECT-BRAIN v4.5
+ (Testing 2026 Edition: BDD + Integration + AI-Assisted + Frontend + MCP + BD)
 ================================================================================
 
 Sistema de scaffolding para Windsurf/Cascade que mantiene documentacion, codigo,
-tests, decisiones, base de datos y frontend (accesibilidad + Core Web Vitals +
-seguridad) sincronizados a lo largo del ciclo de vida del proyecto.
+tests (unit + integracion + E2E + BDD + IA-asistido), decisiones, base de datos
+y frontend (accesibilidad + Core Web Vitals + seguridad) sincronizados a lo largo
+del ciclo de vida del proyecto.
 
 --------------------------------------------------------------------------------
  COMO SE USA EN 30 SEGUNDOS
@@ -18,7 +19,7 @@ seguridad) sincronizados a lo largo del ciclo de vida del proyecto.
    ejecute el protocolo.
 
 --------------------------------------------------------------------------------
- SLASH COMMANDS DISPONIBLES (12 comandos)
+ SLASH COMMANDS DISPONIBLES (13 comandos)
 --------------------------------------------------------------------------------
 Los archivos .md de .windsurf/workflows/ son los comandos invocables. Escribe
 "/" en Cascade y aparecen todos en un desplegable.
@@ -45,7 +46,11 @@ Los archivos .md de .windsurf/workflows/ son los comandos invocables. Escribe
 | /revisar-bd          | Auditar la BD: modelo, seguridad, rendimiento, calidad |
 |                      | de datos. Solo reporta, no modifica.                   |
 | /revisar-frontend    | Auditar el frontend: stack, seguridad, Core Web Vitals,|
-|                      | accesibilidad WCAG 2.2 AA. Solo reporta. NUEVO v4.4.   |
+|                      | accesibilidad WCAG 2.2 AA. Solo reporta.               |
+| /bdd                 | Adoptar BDD: verifica aplicabilidad, instala           |
+|                      | playwright-bdd o @cucumber/cucumber, ofrece primer     |
+|                      | Three Amigos asistido, genera primer .feature validado |
+|                      | por humano. NUEVO v4.5.                                |
 +----------------------+--------------------------------------------------------+
 
 Puedes pasar contexto despues del comando. Ejemplo:
@@ -54,6 +59,7 @@ Puedes pasar contexto despues del comando. Ejemplo:
   /cuestionar audita los tests del modulo de validacion
   /revisar-bd auditoria completa del modelo y datos
   /revisar-frontend auditoria de accesibilidad y CWV
+  /bdd quiero adoptar BDD para los flujos de admision de candidatos
 
 --------------------------------------------------------------------------------
  CICLO DE VIDA TIPICO
@@ -186,6 +192,28 @@ Resto del ciclo         -> igual que arriba
   y altos. Documenta TODOs de validacion manual con lector de pantalla.
   NO modifica codigo. La IA detecta, el humano decide, el humano repara.
 
+/bdd
+  Adopta BDD (Behavior-Driven Development) en el proyecto. Pasos:
+    1. Verifica que BDD aplica al caso (stakeholders no tecnicos +
+       disposicion a Three Amigos). Si no aplica, NO procede.
+    2. Detecta stack y elige herramienta segun regla 2026:
+       - JS/TS con UI:       playwright-bdd (recomendado).
+       - JS/TS sin UI:       @cucumber/cucumber (con scope; el paquete
+                             cucumber sin scope esta abandonado).
+       - Cypress legacy:     @badeball/cypress-cucumber-preprocessor.
+       - .NET:               Reqnroll (SpecFlow discontinuado dic 2024).
+       - JVM + APIs:         Karate DSL.
+    3. Instala dependencias y crea estructura features/ y features/steps/.
+    4. Anade scripts test:bdd / test:bdd:smoke / test:bdd:ui al package.
+    5. Ejecuta un smoke test BDD, verifica verde, lo borra.
+    6. Opcional: primera sesion Three Amigos asistida con Example Mapping
+       (Reglas - Ejemplos - Preguntas). Si >3 preguntas sin resolver, la
+       historia NO esta lista para desarrollarse.
+    7. Genera primer .feature validado por humano antes de step definitions.
+    8. Genera step definitions reutilizando los existentes (no duplica).
+    9. Registra ADR de adopcion de BDD y anade tickets al roadmap.
+   10. Cierre con On(task_complete). NUEVO v4.5.
+
 --------------------------------------------------------------------------------
  REGLAS DE ORO
 --------------------------------------------------------------------------------
@@ -243,14 +271,37 @@ Resto del ciclo         -> igual que arriba
     revision humana en Cursor/Windsurf/Claude Code antes de produccion.
     Tasa reportada: ~40-45% de vulnerabilidades en outputs sin revisar.
 
+14. BDD SIN THREE AMIGOS ES DISFRAZ TECNICO  (v4.5)
+    Adoptar BDD requiere conversacion previa con stakeholders no tecnicos.
+    Sin conversacion, los .feature files no aportan valor real, solo coste
+    de mantenimiento. /bdd verifica esta condicion antes de instalar nada.
+
+15. TESTS CON IA TRAZABLES  (v4.5)
+    Cada test generado por LLM lleva su *.prompt.md versionado junto al
+    test, y pasa code review humano explicito antes de mergear. Tests en
+    verde generados por IA sin revision son test theater.
+
+16. AI LITERACY OBLIGATORIA  (v4.5)
+    Desde el 2 de febrero de 2025, equipos que usan IA deben formar a su
+    personal en uso responsable (EU AI Act). Aplica al uso de IA en
+    testing: prompting, deteccion de anti-patrones, code review.
+
+17. GDPR EN TESTING CON IA  (v4.5)
+    NO enviar PII a LLMs externos sin DPA valido. Para datos sensibles,
+    LLMs locales (Ollama, vLLM) o redaccion previa (Tonic Textual). Si la
+    app es de alto riesgo bajo EU AI Act (Annex III: empleo, credito,
+    educacion, salud, justicia), los tests forman parte del expediente de
+    calidad y se archivan junto a prompts y revisiones.
+
 --------------------------------------------------------------------------------
  ESTRUCTURA DE ARCHIVOS
 --------------------------------------------------------------------------------
 /
 ├── .windsurfrules                     # Reglas cargadas por Cascade
 ├── AGENTS.md                          # Estandar AGENTS.md (Linux Foundation)
+├── CLAUDE.md                          # Soporte Claude Code
 ├── .windsurf/
-│   └── workflows/                     # 12 slash commands invocables con /
+│   └── workflows/                     # 13 slash commands invocables con /
 │       ├── inicio.md
 │       ├── regularizar.md
 │       ├── hoy.md
@@ -262,7 +313,8 @@ Resto del ciclo         -> igual que arriba
 │       ├── onboarding.md
 │       ├── cuestionar.md              # Mutation thinking
 │       ├── revisar-bd.md              # Auditoria de BD
-│       └── revisar-frontend.md        # Auditoria de frontend (NUEVO v4.4)
+│       ├── revisar-frontend.md        # Auditoria de frontend
+│       └── bdd.md                     # Adopcion BDD (NUEVO v4.5)
 ├── docs/                              # SSOT - Single Source of Truth
 │   ├── prd.md                         # Que es el producto y para quien
 │   ├── architecture.md                # Como esta montado tecnicamente
@@ -275,12 +327,15 @@ Resto del ciclo         -> igual que arriba
 │   └── decisions-log.md               # ADRs (registro inmutable)
 ├── prompts/
 │   ├── architect-brain.md             # Cerebro: protocolos On(...)
-│   └── skills/
-│       ├── tests-skill.md             # Generacion de tests por stack
+│   └── skills/                        # 9 skills
+│       ├── tests-skill.md             # Tests unitarios por stack
+│       ├── integration-testing-skill.md  # Supertest + MSW + Testcontainers (NUEVO v4.5)
+│       ├── visual-testing-skill.md    # Tests UI + axe + Playwright
+│       ├── bdd-skill.md               # BDD + Gherkin + Three Amigos (NUEVO v4.5)
+│       ├── ai-testing-skill.md        # Playwright MCP/CLI + GDPR + AI Act (NUEVO v4.5)
 │       ├── legacy-testing-skill.md    # Characterization tests para legacy
 │       ├── database-skill.md          # Diseno y auditoria de BD
-│       ├── frontend-skill.md          # Diseno y auditoria de frontend (NUEVO)
-│       ├── visual-testing-skill.md    # Tests UI + axe + Playwright (NUEVO)
+│       ├── frontend-skill.md          # Diseno y auditoria de frontend
 │       └── prompt-skill.md            # Manual del usuario (RACEO)
 ├── LICENSE                            # MIT
 ├── README.md                          # Descripcion del sistema
@@ -291,7 +346,8 @@ Resto del ciclo         -> igual que arriba
 --------------------------------------------------------------------------------
 Si en algun momento Windsurf ignora el sistema (escribe codigo sin actualizar
 docs, cierra una tarea sin checklist, modifica BD/frontend sin auditar antes,
-etc.), usa este recordatorio:
+adopta BDD sin Three Amigos previo, genera tests con IA sin trazabilidad de
+prompts, etc.), usa este recordatorio:
 
   "Sigue el protocolo de .windsurfrules: consulta blueprints,
    testing-strategy, database-strategy, frontend-strategy y
@@ -300,5 +356,7 @@ etc.), usa este recordatorio:
 Si el problema persiste, invoca /cerrar para forzar el checklist del trabajo
 reciente, /sync para auditar el estado real vs documentado, /revisar-bd o
 /revisar-frontend para auditar BD o frontend si sospechas que se ha desviado.
+Si se intenta adoptar BDD sin discusion previa, invoca /bdd explicitamente:
+el comando verifica las precondiciones antes de instalar nada.
 
 ================================================================================

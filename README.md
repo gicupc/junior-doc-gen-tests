@@ -29,7 +29,7 @@ Este sistema impone protocolos que obligan a la IA a resolver los siete problema
 
 ---
 
-## Slash commands disponibles (12)
+## Slash commands disponibles (13)
 
 | Comando             | Cuándo usarlo                                                                 |
 |---------------------|-------------------------------------------------------------------------------|
@@ -44,11 +44,12 @@ Este sistema impone protocolos que obligan a la IA a resolver los siete problema
 | `/cerrar`           | Forzar checklist de sincronización si sospechas que se saltó.                 |
 | `/cuestionar`       | Auditar la calidad real de los tests con mutation thinking.                   |
 | `/revisar-bd`       | Auditar la BD: modelo, seguridad, rendimiento, calidad de datos.              |
-| `/revisar-frontend` | Auditar el frontend: stack, seguridad, Core Web Vitals, accesibilidad WCAG 2.2 AA. *(nuevo en v4.4)* |
+| `/revisar-frontend` | Auditar el frontend: stack, seguridad, Core Web Vitals, accesibilidad WCAG 2.2 AA. |
+| `/bdd`              | Adoptar BDD: verifica aplicabilidad, instala playwright-bdd o @cucumber/cucumber, primer Three Amigos asistido, genera primer `.feature` validado por humano. *(nuevo en v4.5)* |
 
 ---
 
-## Qué hace el sistema (los 8 pilares)
+## Qué hace el sistema (los 9 pilares)
 
 ### 1. Entrevista inicial estructurada (BMADT)
 
@@ -106,6 +107,17 @@ Filosofía común: **la IA detecta, el humano decide, el humano repara**. Las au
 
 `/hoy` lee los docs clave (incluido `frontend-strategy.md` si existe), ejecuta un mini health-check y devuelve un briefing de 10 líneas con sugerencia concreta para el día.
 
+### 9. Adopción controlada de BDD *(nuevo en v4.5)*
+
+Cuando el proyecto tiene stakeholders no técnicos que validan criterios de aceptación, `/bdd` guía la adopción de Behavior-Driven Development con cuatro garantías:
+
+- **Verificación previa**: si no hay disposición a Three Amigos, recomienda NO adoptar BDD y registra la decisión como ADR.
+- **Stack 2026 elegido por regla**: playwright-bdd para JS/TS con UI, @cucumber/cucumber para APIs sin UI, Reqnroll para .NET (SpecFlow discontinuado en diciembre 2024), Karate DSL para JVM.
+- **Three Amigos asistida**: Example Mapping de Matt Wynne (Reglas → Ejemplos → Preguntas). Si quedan >3 preguntas sin resolver, la historia NO está lista para desarrollarse.
+- **Validación humana obligatoria** del `.feature` antes de generar step definitions. Anti-patrones de Gherkin generado por IA documentados en `bdd-skill.md`.
+
+La skill `ai-testing-skill.md` cubre adicionalmente el flujo IA-asistido transversal: Playwright MCP/CLI, prompting efectivo, trazabilidad de prompts en CI, riesgos (tokens, GDPR, EU AI Act).
+
 ---
 
 ## Stack canónico para frontend nuevo (2026)
@@ -143,8 +155,9 @@ Salvo desviación documentada en ADR:
 /
 ├── .windsurfrules                     # Reglas globales cargadas por Cascade
 ├── AGENTS.md                          # Estándar AGENTS.md (Linux Foundation)
+├── CLAUDE.md                          # Soporte Claude Code
 ├── .windsurf/
-│   └── workflows/                     # 12 slash commands
+│   └── workflows/                     # 13 slash commands
 │       ├── inicio.md
 │       ├── regularizar.md
 │       ├── hoy.md
@@ -156,7 +169,8 @@ Salvo desviación documentada en ADR:
 │       ├── onboarding.md
 │       ├── cuestionar.md              # Mutation thinking
 │       ├── revisar-bd.md              # Auditoría de BD
-│       └── revisar-frontend.md        # Auditoría de frontend (nuevo v4.4)
+│       ├── revisar-frontend.md        # Auditoría de frontend
+│       └── bdd.md                     # Adopción BDD (nuevo v4.5)
 ├── docs/                              # SSOT - Single Source of Truth
 │   ├── prd.md
 │   ├── architecture.md
@@ -165,16 +179,19 @@ Salvo desviación documentada en ADR:
 │   ├── roadmap.md
 │   ├── testing-strategy.md
 │   ├── database-strategy.md           # Si hay BD
-│   ├── frontend-strategy.md           # Si hay frontend (nuevo v4.4)
+│   ├── frontend-strategy.md           # Si hay frontend
 │   └── decisions-log.md               # ADRs
 ├── prompts/
 │   ├── architect-brain.md             # Cerebro: protocolos On(...)
-│   └── skills/
+│   └── skills/                        # 9 skills
 │       ├── tests-skill.md
+│       ├── integration-testing-skill.md  # Nuevo v4.5
+│       ├── visual-testing-skill.md
+│       ├── bdd-skill.md                  # Nuevo v4.5
+│       ├── ai-testing-skill.md           # Nuevo v4.5
 │       ├── legacy-testing-skill.md
 │       ├── database-skill.md
-│       ├── frontend-skill.md          # Nuevo v4.4
-│       ├── visual-testing-skill.md    # Nuevo v4.4
+│       ├── frontend-skill.md
 │       └── prompt-skill.md
 ├── inicio-chat.txt                    # Manual operativo completo
 ├── LICENSE                            # MIT
@@ -198,6 +215,10 @@ Salvo desviación documentada en ADR:
 11. **Frontend primero medir, luego optimizar** — WCAG 2.2 AA y CWV son criterios objetivos. Datos reales (CrUX, axe, lector de pantalla) > intuición.
 12. **Implementación paso a paso** — si un plan toca >2 archivos, aplicar `On(implementation_phase)` con paradas obligatorias.
 13. **Código IA bajo revisión** — outputs de v0/Lovable/Bolt/Figma Make pasan obligatoriamente por revisión humana en Cursor/Windsurf/Claude Code antes de producción.
+14. **BDD sin Three Amigos es disfraz técnico** *(v4.5)* — adoptar BDD requiere conversación previa con stakeholders no técnicos. Sin conversación, los `.feature` files no aportan valor real.
+15. **Tests con IA trazables** *(v4.5)* — cada test generado por LLM lleva su `*.prompt.md` versionado y pasa code review humano explícito antes de mergear.
+16. **AI literacy obligatoria** *(v4.5)* — desde el 2 de febrero de 2025 equipos que usan IA deben formar a su personal en uso responsable. Aplica al testing con IA.
+17. **GDPR en testing con IA** *(v4.5)* — NO enviar PII a LLMs externos sin DPA válido. Para datos sensibles, LLMs locales o redacción previa.
 
 ---
 
@@ -210,7 +231,8 @@ Evolución:
 - **v4.1**: testing integrado, ADRs inmutables, antidrift por checklist, slash commands, characterization tests, mutation thinking.
 - **v4.2**: base de datos como ciudadano de primera clase — `On(database_setup)`, `On(database_audit)`, `/revisar-bd`, `database-skill.md`, `database-strategy.md`.
 - **v4.3**: `/onboarding` para codebases ajenos, `On(implementation_phase)` con paradas obligatorias entre archivos, patrón Active-Record-friendly para mocks de Prisma, `prompt-skill.md` con patrón RACEO.
-- **v4.4** *(actual)* — **Frontend & MCP Edition**: añade frontend como ciudadano de primera clase. `On(frontend_setup)` automático para proyectos nuevos con stack canónico 2026 (Next.js + TS estricto + Tailwind v4 + shadcn + Biome + Zod). `On(frontend_audit)` y `/revisar-frontend` para proyectos existentes con auditoría de stack/seguridad/CWV/a11y. Skills nuevas `frontend-skill.md` y `visual-testing-skill.md`. Doc nuevo `frontend-strategy.md` en SSOT. `AGENTS.md` añadido como estándar oficial (Linux Foundation, dic 2025). Reglas de oro 11, 12 y 13 sobre frontend, MCP servers y código IA bajo revisión.
+- **v4.4** — **Frontend & MCP Edition**: añade frontend como ciudadano de primera clase. `On(frontend_setup)` automático para proyectos nuevos con stack canónico 2026 (Next.js + TS estricto + Tailwind v4 + shadcn + Biome + Zod). `On(frontend_audit)` y `/revisar-frontend` para proyectos existentes con auditoría de stack/seguridad/CWV/a11y. Skills nuevas `frontend-skill.md` y `visual-testing-skill.md`. Doc nuevo `frontend-strategy.md` en SSOT. `AGENTS.md` añadido como estándar oficial (Linux Foundation, dic 2025). Reglas de oro 11, 12 y 13 sobre frontend, MCP servers y código IA bajo revisión.
+- **v4.5** *(actual)* — **Testing 2026 Edition (BDD + Integration + AI-Assisted)**: la suite de testing pasa de 3 capas (unit + legacy + visual/E2E) a 6 niveles documentados. Skills nuevas: `integration-testing-skill.md` (Supertest + MSW + Testcontainers), `bdd-skill.md` (Gherkin + playwright-bdd + Three Amigos + Example Mapping + anti-patrones IA), `ai-testing-skill.md` (Playwright MCP/CLI, prompting, trazabilidad, GDPR, EU AI Act). Workflow nuevo `/bdd`. Protocolo nuevo `On(bdd_setup)`. `On(testing_setup)` ampliado de 10 a 13 pasos con preguntas opt-in sobre BDD y uso de IA. Pirámide flexible 2026 (Cohn vs Testing Trophy de Kent C. Dodds) explicada en `testing-strategy.md`. Reglas de oro 14-17 sobre BDD, trazabilidad de tests IA, AI literacy (obligatoria desde 2 febrero 2025) y GDPR en testing con IA. Cumplimiento normativo (EU AI Act + GDPR) integrado en `testing-strategy.md` como sección opt-in.
 
 ---
 
@@ -225,4 +247,4 @@ MIT
 
 Además de Windsurf, este sistema funciona también en **Claude Code** (la CLI de Anthropic) gracias al archivo `CLAUDE.md` añadido en la raíz del proyecto. Es un fichero delgado (~5 KB) que apunta a las fuentes de verdad existentes (`.windsurfrules`, `prompts/architect-brain.md`, los workflows y skills), por lo que no duplica contenido y no afecta al comportamiento de Windsurf.
 
-Si abres Claude Code en un proyecto que tenga esta estructura instalada, lee `CLAUDE.md` automáticamente y aplica el mismo sistema Architect-Brain v4.4 que aplica Windsurf: mismas reglas de oro, mismos protocolos `On(...)`, mismos slash commands.
+Si abres Claude Code en un proyecto que tenga esta estructura instalada, lee `CLAUDE.md` automáticamente y aplica el mismo sistema Architect-Brain v4.5 que aplica Windsurf: mismas reglas de oro, mismos protocolos `On(...)`, mismos slash commands.

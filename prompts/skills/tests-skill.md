@@ -2,6 +2,14 @@
 
 Esta skill contiene las convenciones y patrones para generar tests unitarios en cualquier proyecto bajo el protocolo Architect-Brain.
 
+Para las otras capas de la pirámide de testing, consultar las skills hermanas:
+
+- **Integración** (API + BD real, MSW, Supertest) → `integration-testing-skill.md`.
+- **E2E + visual + a11y** (Playwright + axe + pixelmatch) → `visual-testing-skill.md`.
+- **BDD / Aceptación** (Gherkin, playwright-bdd, Three Amigos) → `bdd-skill.md`.
+- **Tests legacy / characterization** → `legacy-testing-skill.md`.
+- **Testing asistido por IA** (Playwright MCP/CLI, prompting, gates, AI Act) → `ai-testing-skill.md`.
+
 ---
 
 ## Principios
@@ -72,7 +80,9 @@ class ValidatorTest extends TestCase
 
 Mock de BD típico: `$pdo = $this->createMock(PDO::class);`
 
-### JavaScript/TypeScript + Jest
+### JavaScript/TypeScript + Jest o Vitest
+
+> **Recomendación 2026**: para proyectos NUEVOS con Vite, Next.js 15+ o React 19, **Vitest** es preferido sobre Jest (entre 4x y 10x más rápido en watch mode, ESM y TypeScript nativos, API casi idéntica). Para código existente sobre Jest, mantener Jest (migración no compensa salvo dolor real). React Native sigue requiriendo Jest.
 
 ```ts
 describe('validateEmail', () => {
@@ -85,6 +95,18 @@ describe('validateEmail', () => {
     });
 });
 ```
+
+En Vitest, los imports cambian ligeramente y `jest.mock` se sustituye por `vi.mock`:
+
+```ts
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('../services/userService', () => ({
+    getUsers: vi.fn(),
+}));
+```
+
+El resto del patrón (AAA, mocks, asserts) es idéntico.
 
 Mock de Prisma — **dos patrones según el código de producción**:
 
@@ -147,6 +169,26 @@ Mock con `unittest.mock.patch` o la fixture `mocker` de pytest-mock.
 | Monorepo | `packages/<pkg>/tests/` por paquete |
 
 Decisión documentada en `docs/testing-strategy.md`.
+
+---
+
+## Cuándo escalar a integration o E2E
+
+La regla operativa: usa el nivel más bajo de la pirámide que cubra el caso con suficiente fidelidad. Cada nivel hacia arriba multiplica entre 5x y 20x el tiempo de ejecución.
+
+| Tipo de lógica | Nivel adecuado | Skill aplicable |
+|---|---|---|
+| Función pura, validador, parser, cálculo | **Unit** | Esta skill |
+| Servicio con dependencias mockeadas a nivel de interfaz | **Unit** | Esta skill |
+| Endpoint HTTP + servicio + BD real | **Integración** | `integration-testing-skill.md` |
+| Componente React + fetch interceptado por MSW | **Integración** | `integration-testing-skill.md` |
+| Flujo completo de usuario (login → navegación → acción) | **E2E** | `visual-testing-skill.md` |
+| Verificación visual pixel-perfect | **E2E + visual diff** | `visual-testing-skill.md` |
+| Criterio de aceptación de negocio validado por stakeholders | **BDD** | `bdd-skill.md` |
+
+Si dudas si un test es de integración o E2E: ¿necesita navegador real? Si sí, es E2E. Si solo necesita Node + BD + MSW, es integración.
+
+Si dudas si un test es unit o integración: ¿mockea las dependencias externas? Si sí, es unit. Si usa BD real / MSW / cliente HTTP real, es integración.
 
 ---
 
